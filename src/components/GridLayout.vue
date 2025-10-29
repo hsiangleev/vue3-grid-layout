@@ -1,16 +1,16 @@
 <template>
-    <div ref='gridRef' class='grid-stack' :grid-pid="props.pid" :style="layoutStyle">
-        <div v-if="isShowPlaceholder" class="grid-stack-item shadow-placeholder" :style="placeholderStyle" ></div>
+    <div ref='gridRef' class='grid-stack' :grid-pid='props.pid' :style='layoutStyle'>
+        <div v-if='isShowPlaceholder' class='grid-stack-item shadow-placeholder' :style='placeholderStyle' />
         <div
             v-for='v,i in currentData'
             :key='v.id'
             :class='["grid-stack-item"]'
             :style='itemStyle(v)'
-            :grid-id="v.id"
-            @mousedown.stop="(e) => mouseDown(e, v)"
+            :grid-id='v.id'
+            @mousedown.stop='(e) => mouseDown(e, v)'
         >
-            <slot :row="currentData[i]!" />
-            <div class="grid-stack-item-resize" @mousedown.stop="(e) => resizeDown(e, v)"></div>
+            <slot :row='currentData[i]!' />
+            <div class='grid-stack-item-resize' @mousedown.stop='(e) => resizeDown(e, v)' />
         </div>
     </div>
 </template>
@@ -24,7 +24,7 @@ const props = withDefaults(defineProps<IProps>(), {
     rowHeight: 30,
     cols: 12,
     verticalCompact: true,
-    isNested: false,
+    isNested: false
 })
 
 const gridRef = useTemplateRef('gridRef')

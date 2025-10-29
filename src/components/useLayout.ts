@@ -145,7 +145,7 @@ const useDragFn = (
         let x = clientX - mouseDownX
         let y = clientY - mouseDownY
 
-        const el = document.elementFromPoint(clientX, clientY) as HTMLDivElement;
+        const el = document.elementFromPoint(clientX, clientY) as HTMLDivElement
         const pid = el?.getAttribute('grid-pid')
         const item = movingItem.value!
         // 不在一个坐标系（嵌套拖拽）
@@ -158,9 +158,9 @@ const useDragFn = (
             item.pid = pid
             // 结束当前坐标系的拖拽
             document.dispatchEvent(new MouseEvent('mouseup', {
-                bubbles: true,     // 让事件可以冒泡
-                cancelable: true,  // 是否可取消
-                clientX: clientX,      // 模拟鼠标位置
+                bubbles: true, // 让事件可以冒泡
+                cancelable: true, // 是否可取消
+                clientX: clientX, // 模拟鼠标位置
                 clientY: clientY
             }))
 
@@ -168,9 +168,9 @@ const useDragFn = (
             nextTick(() => {
                 const nEl = document.querySelector(`.grid-stack[grid-pid='${pid}'] .grid-stack-item[grid-id='${item.id}']`)
                 nEl && nEl.dispatchEvent(new MouseEvent('mousedown', {
-                    bubbles: true,     // 让事件可以冒泡
-                    cancelable: true,  // 是否可取消
-                    clientX: clientX,      // 模拟鼠标位置
+                    bubbles: true, // 让事件可以冒泡
+                    cancelable: true, // 是否可取消
+                    clientX: clientX, // 模拟鼠标位置
                     clientY: clientY
                 }))
             })
@@ -217,7 +217,7 @@ const useResizeFn = (
     const resizeHeight = ref(0)
     const resizeDown = (event: MouseEvent, v: IGridItem) => {
         const currentEl = ((event.currentTarget as HTMLDivElement).parentNode as HTMLDivElement).getClientRects()[0]!
-        const { width, height} = currentEl
+        const { width, height } = currentEl
         resizeWidth.value = width
         resizeHeight.value = height
         resizeItem.value = v
@@ -232,7 +232,7 @@ const useResizeFn = (
         if(resizeWidth.value < boxWidth.value) resizeWidth.value = boxWidth.value
         if(resizeHeight.value < rootData.rowHeight!) resizeHeight.value = rootData.rowHeight!
         let w = pixelToGridW(resizeWidth.value, boxWidth.value)
-        let h = pixelToGridH(resizeHeight.value, rootData.rowHeight!)
+        const h = pixelToGridH(resizeHeight.value, rootData.rowHeight!)
 
         // 计算当前坐标系的最大值
         const maxW = modelValue.value.find(v => v.id === item.pid)?.w ?? rootData.cols!
@@ -254,40 +254,40 @@ const useResizeFn = (
 }
 
 export const hasCollision = (items: IGridItem[]) => {
-  for (let i = 0; i < items.length; i++) {
-    for (let j = i + 1; j < items.length; j++) {
-      const a = items[i]!, b = items[j]!;
-      const overlapX = !(a.x + a.w <= b.x || b.x + b.w <= a.x);
-      const overlapY = !(a.y + a.h <= b.y || b.y + b.h <= a.y);
-      if (overlapX && overlapY) {
-        console.warn(`Collision: ${a.id ?? i} <-> ${b.id ?? j}`);
-        return true;
-      }
+    for (let i = 0; i < items.length; i++) {
+        for (let j = i + 1; j < items.length; j++) {
+            const a = items[i]!, b = items[j]!
+            const overlapX = !(a.x + a.w <= b.x || b.x + b.w <= a.x)
+            const overlapY = !(a.y + a.h <= b.y || b.y + b.h <= a.y)
+            if (overlapX && overlapY) {
+                console.warn(`Collision: ${a.id ?? i} <-> ${b.id ?? j}`)
+                return true
+            }
+        }
     }
-  }
-  return false;
+    return false
 }
 
 /** 向上压缩空间 */
 const compressVerticalSkyline = (currentData: Ref<IGridItem[]>, verticalCompact: boolean, cols: number) => {
     // 初始化 skyline 为 0（每列当前高度）
-    const skyline: number[] = new Array(cols).fill(0);
+    const skyline: number[] = new Array(cols).fill(0)
     if(!verticalCompact) return skyline
     // 按 y 升序处理（可确保稳定放置）
-    currentData.value.sort((a,b) => (a.y - b.y) || (a.x - b.x));
+    currentData.value.sort((a,b) => (a.y - b.y) || (a.x - b.x))
     // 辅助：取区间 max
     const rangeMax = (l: number, r: number) => {
-        let m = 0;
-        for (let c = l; c < r; c++) if (skyline[c]! > m) m = skyline[c]!;
-        return m;
+        let m = 0
+        for (let c = l; c < r; c++) if (skyline[c]! > m) m = skyline[c]!
+        return m
     }
     for (const item of currentData.value) {
-        const l = item.x;
-        const r = Math.min(cols, item.x + item.w);
-        const newY = rangeMax(l, r); // 可以放置的最小 y
-        item.y = newY;
-        const newBottom = newY + item.h;
-        for (let c = l; c < r; c++) skyline[c] = newBottom;
+        const l = item.x
+        const r = Math.min(cols, item.x + item.w)
+        const newY = rangeMax(l, r) // 可以放置的最小 y
+        item.y = newY
+        const newBottom = newY + item.h
+        for (let c = l; c < r; c++) skyline[c] = newBottom
     }
     return skyline
 }
@@ -347,11 +347,11 @@ const getStyle = (v: IGridItem, marginX: number, marginY: number, boxWidth: numb
 
 /** 获取一个元素相对于另一个元素的偏移量 */
 const getOffsetRelativeTo = (el: HTMLDivElement, relativeEl: HTMLDivElement) => {
-    const rect1 = el.getBoundingClientRect();
-    const rect2 = relativeEl.getBoundingClientRect();
+    const rect1 = el.getBoundingClientRect()
+    const rect2 = relativeEl.getBoundingClientRect()
 
     return {
         x: rect1.left - rect2.left,
-        y: rect1.top - rect2.top,
+        y: rect1.top - rect2.top
     }
 }
