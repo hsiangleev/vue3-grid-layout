@@ -1,0 +1,45 @@
+{
+  "name": "vue3-grid-layout",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --fix",
+    "styleLint": "stylelint **/*.{css,vue} --fix"
+  },
+  "dependencies": {
+    "@stylistic/stylelint-plugin": "^4.0.0",
+    "gridstack": "^12.3.3",
+    "stylelint": "^16.25.0",
+    "stylelint-config-recommended-vue": "^1.6.1",
+    "stylelint-config-standard": "^39.0.1",
+    "vue": "^3.5.22"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.32.0",
+    "@interactjs/actions": "^1.10.27",
+    "@interactjs/auto-scroll": "^1.10.27",
+    "@interactjs/auto-start": "^1.10.27",
+    "@interactjs/dev-tools": "^1.10.27",
+    "@interactjs/interact": "^1.10.27",
+    "@interactjs/modifiers": "^1.10.27",
+    "@interactjs/types": "^1.10.27",
+    "@types/element-resize-detector": "^1.1.6",
+    "@types/node": "^24.6.0",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "@vue/tsconfig": "^0.8.1",
+    "@vueuse/core": "^14.0.0",
+    "element-resize-detector": "^1.2.4",
+    "eslint": "^9.32.0",
+    "eslint-plugin-vue": "^10.5.1",
+    "globals": "^16.4.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.46.1",
+    "vite": "^7.1.7",
+    "vite-plugin-dts": "^4.5.4",
+    "vue-tsc": "^3.1.0"
+  }
+}

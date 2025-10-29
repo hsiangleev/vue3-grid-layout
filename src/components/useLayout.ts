@@ -1,0 +1,263 @@
+import { computed, onMounted, ref, type Ref, type ShallowRef, type InjectionKey, nextTick } from 'vue'
+import { useResizeObserver } from '@vueuse/core'
+
+export class IData {
+    rootEl?: HTMLDivElement
+    margin?: [number, number] = [10, 10]
+    rowHeight?: number = 30
+    cols?: number = 12
+    verticalCompact?: boolean = true
+}
+
+export const InjectionKeySymbol = Symbol() as InjectionKey<IData>
+
+export interface IGridItem {
+    id: string
+    x: number
+    y: number
+    w: number
+    h: number
+    isNested?: boolean
+    pid?: string
+}
+
+class IDomRect {
+    width = 0
+    height = 0
+    top = 0
+    right = 0
+    bottom = 0
+    left = 0
+    x = 0
+    y = 0
+}
+
+export interface IProps {
+    pid?: string
+    margin?: [number, number]
+    rowHeight?: number
+    cols?: number
+    verticalCompact?: boolean
+    isNested?: boolean
+    level?: number
+}
+
+/**
+ * Gridstack composable hook
+ * @param gridElRef 容器 ref
+ * @param layout 布局数据 (响应式 shallowRef)
+ * @param options GridStack 初始化参数
+ */
+export function useGridstack(rootData: IData, layout: Ref<IGridItem[]>, gridRef: Ref<HTMLDivElement | null>) {
+    const marginX = computed(() => rootData.margin![0])
+    const marginY = computed(() => rootData.margin![1])
+    const rootRect = ref(new IDomRect())
+    const layoutRect = ref(new IDomRect())
+    const boxWidth = ref(0)
+
+    onMounted(async() => {
+        await nextTick()
+        compressVerticalSkyline(layout, rootData.verticalCompact!, rootData.cols!)
+        // 以根节点为参考坐标系
+        useResizeObserver(rootData.rootEl, ([r]) => {
+            rootRect.value = r!.contentRect
+            boxWidth.value = (rootRect.value.width - marginX.value * (rootData.cols! - 1)) / rootData.cols!
+        })
+        useResizeObserver(gridRef.value, ([r]) => {
+            layoutRect.value = r!.contentRect
+        })
+    })
+    
+    const { isMoving, mouseDown, mouseUp, movingStyle, movingItem, moveLeft, moveTop } = useDragFn(rootData, layout, layoutRect, boxWidth)
+
+    const itemStyle = computed(() => (v: IGridItem) => {
+        const boxHeight = rootData.rowHeight!
+        const style = getStyle(v, marginX.value, marginY.value, boxWidth.value, boxHeight)
+        // 如果当前正在拖拽，则修改为移动的坐标
+        if(movingItem.value && movingItem.value.id === v.id) {
+            style.left = `${moveLeft.value}px`
+            style.top = `${moveTop.value}px`
+        }
+        return style
+    })
+
+    return {
+        itemStyle, isMoving, mouseDown, mouseUp, movingStyle
+    }
+}
+
+const useDragFn = (rootData: IData, layout: Ref<IGridItem[]>, layoutRect: Ref<IDomRect>, boxWidth: Ref<number>) => {
+    const marginX = computed(() => rootData.margin![0])
+    const marginY = computed(() => rootData.margin![1])
+    let mouseDownX = 0
+    let mouseDownY = 0
+    let mouseOffsetX = 0
+    let mouseOffsetY = 0
+    const moveLeft = ref(0)
+    const moveTop = ref(0)
+    const targetEl = ref<HTMLDivElement>()
+    const mouseDown = (event: MouseEvent, v: IGridItem) => {
+        targetEl.value = event.currentTarget as HTMLDivElement
+        mouseDownX = event.clientX - targetEl.value.offsetLeft
+        mouseDownY = event.clientY - targetEl.value.offsetTop
+        targetEl.value.style.pointerEvents = 'none'
+
+        movingItem.value = v
+        document.addEventListener('mousemove', mouseMove)
+        document.addEventListener('mouseup', mouseUp)
+
+        moveLeft.value = targetEl.value.offsetLeft
+        moveTop.value = targetEl.value.offsetTop
+
+        mouseOffsetX = event.offsetX
+        mouseOffsetY = event.offsetY
+    }
+    const mouseMove = (event: MouseEvent) => {
+        const { clientX, clientY } = event
+        let x = clientX - mouseDownX
+        let y = clientY - mouseDownY
+
+        const el = document.elementFromPoint(clientX, clientY) as HTMLDivElement;
+        const pid = el?.getAttribute('grid-pid')
+        const item = movingItem.value!
+        // 不在一个坐标系（嵌套拖拽）
+        if(pid && item.pid !== pid) {
+            // 计算当前元素相对坐标系的坐标
+            const relativeTo = getOffsetRelativeTo(targetEl.value!, el)
+            x = relativeTo.x + mouseOffsetX
+            y = relativeTo.y + mouseOffsetY
+
+            item.pid = pid
+            // 结束当前坐标系的拖拽
+            document.dispatchEvent(new MouseEvent('mouseup', {
+                bubbles: true,     // 让事件可以冒泡
+                cancelable: true,  // 是否可取消
+                clientX: clientX,      // 模拟鼠标位置
+                clientY: clientY
+            }))
+
+            // 在新的坐标系执行拖拽
+            nextTick(() => {
+                const nEl = document.querySelector(`.grid-stack[grid-pid='${pid}'] .grid-stack-item[grid-id='${item.id}']`)
+                nEl && nEl.dispatchEvent(new MouseEvent('mousedown', {
+                    bubbles: true,     // 让事件可以冒泡
+                    cancelable: true,  // 是否可取消
+                    clientX: clientX,      // 模拟鼠标位置
+                    clientY: clientY
+                }))
+            })
+        }
+
+        moveLeft.value = x
+        moveTop.value = y
+
+        // 边界判断
+        if(x < 0) x = 0
+        if(y < 0) y = 0
+        if(targetEl.value) {
+            const w = layoutRect.value.width - targetEl.value!.offsetWidth
+            if(x > w) x = w
+        }
+        item.x = pixelToGridX(x, marginX.value, boxWidth.value)
+        item.y = pixelToGridY(y, marginY.value, rootData.rowHeight!)
+        compressVerticalSkyline(layout, rootData.verticalCompact!, rootData.cols!)
+    }
+
+    const mouseUp = () => {
+        document.removeEventListener('mousemove', mouseMove)
+        document.removeEventListener('mouseup', mouseUp)
+        targetEl.value!.style.pointerEvents = ''
+        movingItem.value = undefined
+        targetEl.value = undefined
+    }
+    const movingItem = ref<IGridItem>()
+    const isMoving = computed(() => !!movingItem.value)
+    const movingStyle = computed(() => {
+        const boxHeight = rootData.rowHeight!
+        const v = movingItem.value
+        if(!v) return {}
+        const style = getStyle(v, marginX.value, marginY.value, boxWidth.value, boxHeight)
+        return style
+    })
+
+    return {
+        isMoving, mouseDown, mouseUp, movingStyle, movingItem, moveLeft, moveTop
+    }
+}
+
+export const hasCollision = (items: IGridItem[]) => {
+  for (let i = 0; i < items.length; i++) {
+    for (let j = i + 1; j < items.length; j++) {
+      const a = items[i]!, b = items[j]!;
+      const overlapX = !(a.x + a.w <= b.x || b.x + b.w <= a.x);
+      const overlapY = !(a.y + a.h <= b.y || b.y + b.h <= a.y);
+      if (overlapX && overlapY) {
+        console.warn(`Collision: ${a.id ?? i} <-> ${b.id ?? j}`);
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/** 向上压缩空间 */
+const compressVerticalSkyline = (layout: Ref<IGridItem[]>, verticalCompact: boolean, cols: number) => {
+    if(!verticalCompact) return
+    // 按 y 升序处理（可确保稳定放置）
+    layout.value.sort((a,b) => (a.y - b.y) || (a.x - b.x));
+    // 初始化 skyline 为 0（每列当前高度）
+    const skyline = new Array(cols).fill(0);
+    // 辅助：取区间 max
+    const rangeMax = (l: number, r: number) => {
+        let m = 0;
+        for (let c = l; c < r; c++) if (skyline[c] > m) m = skyline[c];
+        return m;
+    }
+    for (const item of layout.value) {
+        const l = item.x;
+        const r = Math.min(cols, item.x + item.w);
+        const newY = rangeMax(l, r); // 可以放置的最小 y
+        item.y = newY;
+        const newBottom = newY + item.h;
+        for (let c = l; c < r; c++) skyline[c] = newBottom;
+    }
+}
+
+/**
+ * 反推坐标轴X
+ * @param px 实际坐标
+ * @param marginX marginLeft
+ * @param boxWidth 单个坐标宽度
+ * @returns 
+ */
+const pixelToGridX = (px: number, marginX: number, boxWidth: number) => Math.round((px - marginX) / (boxWidth + marginX))
+
+/**
+ * 反推坐标轴Y
+ * @param px 实际坐标
+ * @param marginY marginTop
+ * @param rowHeight 单个坐标高度
+ * @returns 
+ */
+const pixelToGridY = (py: number, marginY: number, rowHeight: number) => Math.round((py - marginY) / (rowHeight + marginY))
+
+const getStyle = (v: IGridItem, marginX: number, marginY: number, boxWidth: number, boxHeight: number) => {
+    const style: Record<string, string> = {
+        width: `${boxWidth * v.w + (v.w - 1) * marginX}px`,
+        height: `${boxHeight * v.h + (v.h - 1) * marginY}px`,
+        left: `${boxWidth * v.x + (v.x + 1) * marginX - marginX}px`,
+        top: `${boxHeight * v.y + (v.y + 1) * marginY - marginY}px`
+    }
+    return style
+}
+
+/** 获取一个元素相对于另一个元素的偏移量 */
+const getOffsetRelativeTo = (el: HTMLDivElement, relativeEl: HTMLDivElement) => {
+    const rect1 = el.getBoundingClientRect();
+    const rect2 = relativeEl.getBoundingClientRect();
+
+    return {
+        x: rect1.left - rect2.left,
+        y: rect1.top - rect2.top,
+    }
+}
