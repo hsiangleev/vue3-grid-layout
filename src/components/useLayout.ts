@@ -1,4 +1,4 @@
-import { computed, onMounted, ref, type Ref, type ShallowRef, type InjectionKey, nextTick } from 'vue'
+import { computed, onMounted, ref, type Ref, type InjectionKey, nextTick } from 'vue'
 import { useResizeObserver } from '@vueuse/core'
 
 export class IData {
@@ -39,25 +39,21 @@ export interface IProps {
     cols?: number
     verticalCompact?: boolean
     isNested?: boolean
-    level?: number
 }
 
-/**
- * Gridstack composable hook
- * @param gridElRef 容器 ref
- * @param layout 布局数据 (响应式 shallowRef)
- * @param options GridStack 初始化参数
- */
-export function useGridstack(rootData: IData, layout: Ref<IGridItem[]>, gridRef: Ref<HTMLDivElement | null>) {
+export function useGridstack(props: IProps, rootData: IData, modelValue: Ref<IGridItem[]>, gridRef: Ref<HTMLDivElement | null>, isRoot: boolean) {
     const marginX = computed(() => rootData.margin![0])
     const marginY = computed(() => rootData.margin![1])
     const rootRect = ref(new IDomRect())
     const layoutRect = ref(new IDomRect())
     const boxWidth = ref(0)
+    const currentData = computed(() => modelValue.value.filter(v => !v.pid || v.pid === props.pid))
+
+    const skyline = ref<number[]>([])
 
     onMounted(async() => {
         await nextTick()
-        compressVerticalSkyline(layout, rootData.verticalCompact!, rootData.cols!)
+        skyline.value = compressVerticalSkyline(currentData, rootData.verticalCompact!, rootData.cols!)
         // 以根节点为参考坐标系
         useResizeObserver(rootData.rootEl, ([r]) => {
             rootRect.value = r!.contentRect
@@ -68,8 +64,10 @@ export function useGridstack(rootData: IData, layout: Ref<IGridItem[]>, gridRef:
         })
     })
     
-    const { isMoving, mouseDown, mouseUp, movingStyle, movingItem, moveLeft, moveTop } = useDragFn(rootData, layout, layoutRect, boxWidth)
+    const { mouseDown, mouseUp, movingItem, moveLeft, moveTop } = useDragFn(rootData, currentData, layoutRect, boxWidth, skyline)
+    const { resizeDown, resizeItem, resizeWidth, resizeHeight } = useResizeFn(rootData, currentData, boxWidth, modelValue, skyline)
 
+    /** 每块样式 */
     const itemStyle = computed(() => (v: IGridItem) => {
         const boxHeight = rootData.rowHeight!
         const style = getStyle(v, marginX.value, marginY.value, boxWidth.value, boxHeight)
@@ -78,15 +76,45 @@ export function useGridstack(rootData: IData, layout: Ref<IGridItem[]>, gridRef:
             style.left = `${moveLeft.value}px`
             style.top = `${moveTop.value}px`
         }
+        // 如果当前正在缩放，则修改宽高
+        if(resizeItem.value && resizeItem.value.id === v.id) {
+            style.width = `${resizeWidth.value}px`
+            style.height = `${resizeHeight.value}px`
+        }
+        return style
+    })
+    
+    const isShowPlaceholder = computed(() => !!movingItem.value || !!resizeItem.value)
+    /** 拖拽阴影样式 */
+    const placeholderStyle = computed(() => {
+        const boxHeight = rootData.rowHeight!
+        const v = movingItem.value || resizeItem.value
+        if(!v) return {}
+        const style = getStyle(v, marginX.value, marginY.value, boxWidth.value, boxHeight)
+        return style
+    })
+    
+    const layoutHeight = computed(() => countGridMaxHeight(skyline.value, rootData.rowHeight!, marginY.value))
+    /** layout样式 */
+    const layoutStyle = computed(() => {
+        const style: Record<string, string> = {}
+        if(!isRoot) return style
+        style.height = `${layoutHeight.value}px`
         return style
     })
 
     return {
-        itemStyle, isMoving, mouseDown, mouseUp, movingStyle
+        currentData, itemStyle, isShowPlaceholder, mouseDown, mouseUp, placeholderStyle, resizeDown, layoutStyle
     }
 }
 
-const useDragFn = (rootData: IData, layout: Ref<IGridItem[]>, layoutRect: Ref<IDomRect>, boxWidth: Ref<number>) => {
+const useDragFn = (
+    rootData: IData, 
+    currentData: Ref<IGridItem[]>, 
+    layoutRect: Ref<IDomRect>, 
+    boxWidth: Ref<number>, 
+    skyline: Ref<number[]>
+) => {
     const marginX = computed(() => rootData.margin![0])
     const marginY = computed(() => rootData.margin![1])
     let mouseDownX = 0
@@ -160,7 +188,7 @@ const useDragFn = (rootData: IData, layout: Ref<IGridItem[]>, layoutRect: Ref<ID
         }
         item.x = pixelToGridX(x, marginX.value, boxWidth.value)
         item.y = pixelToGridY(y, marginY.value, rootData.rowHeight!)
-        compressVerticalSkyline(layout, rootData.verticalCompact!, rootData.cols!)
+        skyline.value = compressVerticalSkyline(currentData, rootData.verticalCompact!, rootData.cols!)
     }
 
     const mouseUp = () => {
@@ -171,17 +199,57 @@ const useDragFn = (rootData: IData, layout: Ref<IGridItem[]>, layoutRect: Ref<ID
         targetEl.value = undefined
     }
     const movingItem = ref<IGridItem>()
-    const isMoving = computed(() => !!movingItem.value)
-    const movingStyle = computed(() => {
-        const boxHeight = rootData.rowHeight!
-        const v = movingItem.value
-        if(!v) return {}
-        const style = getStyle(v, marginX.value, marginY.value, boxWidth.value, boxHeight)
-        return style
-    })
 
     return {
-        isMoving, mouseDown, mouseUp, movingStyle, movingItem, moveLeft, moveTop
+        mouseDown, mouseUp, movingItem, moveLeft, moveTop
+    }
+}
+
+const useResizeFn = (
+    rootData: IData, 
+    currentData: Ref<IGridItem[]>, 
+    boxWidth: Ref<number>, 
+    modelValue: Ref<IGridItem[]>, 
+    skyline: Ref<number[]>
+) => {
+    const resizeItem = ref<IGridItem>()
+    const resizeWidth = ref(0)
+    const resizeHeight = ref(0)
+    const resizeDown = (event: MouseEvent, v: IGridItem) => {
+        const currentEl = ((event.currentTarget as HTMLDivElement).parentNode as HTMLDivElement).getClientRects()[0]!
+        const { width, height} = currentEl
+        resizeWidth.value = width
+        resizeHeight.value = height
+        resizeItem.value = v
+        document.addEventListener('mousemove', resizeMove)
+        document.addEventListener('mouseup', resizeUp)
+    }
+    const resizeMove = (event: MouseEvent) => {
+        resizeWidth.value += event.movementX
+        resizeHeight.value += event.movementY
+
+        const item = resizeItem.value!
+        if(resizeWidth.value < boxWidth.value) resizeWidth.value = boxWidth.value
+        if(resizeHeight.value < rootData.rowHeight!) resizeHeight.value = rootData.rowHeight!
+        let w = pixelToGridW(resizeWidth.value, boxWidth.value)
+        let h = pixelToGridH(resizeHeight.value, rootData.rowHeight!)
+
+        // 计算当前坐标系的最大值
+        const maxW = modelValue.value.find(v => v.id === item.pid)?.w ?? rootData.cols!
+        if(w + item.x > maxW) w = maxW - item.x
+        item.w = w
+        item.h = h
+        skyline.value = compressVerticalSkyline(currentData, rootData.verticalCompact!, rootData.cols!)
+    }
+    const resizeUp = () => {
+        
+        document.removeEventListener('mousemove', resizeMove)
+        document.removeEventListener('mouseup', resizeUp)
+        resizeItem.value = undefined
+    }
+
+    return {
+        resizeDown, resizeItem, resizeWidth, resizeHeight
     }
 }
 
@@ -201,19 +269,19 @@ export const hasCollision = (items: IGridItem[]) => {
 }
 
 /** 向上压缩空间 */
-const compressVerticalSkyline = (layout: Ref<IGridItem[]>, verticalCompact: boolean, cols: number) => {
-    if(!verticalCompact) return
-    // 按 y 升序处理（可确保稳定放置）
-    layout.value.sort((a,b) => (a.y - b.y) || (a.x - b.x));
+const compressVerticalSkyline = (currentData: Ref<IGridItem[]>, verticalCompact: boolean, cols: number) => {
     // 初始化 skyline 为 0（每列当前高度）
-    const skyline = new Array(cols).fill(0);
+    const skyline: number[] = new Array(cols).fill(0);
+    if(!verticalCompact) return skyline
+    // 按 y 升序处理（可确保稳定放置）
+    currentData.value.sort((a,b) => (a.y - b.y) || (a.x - b.x));
     // 辅助：取区间 max
     const rangeMax = (l: number, r: number) => {
         let m = 0;
-        for (let c = l; c < r; c++) if (skyline[c] > m) m = skyline[c];
+        for (let c = l; c < r; c++) if (skyline[c]! > m) m = skyline[c]!;
         return m;
     }
-    for (const item of layout.value) {
+    for (const item of currentData.value) {
         const l = item.x;
         const r = Math.min(cols, item.x + item.w);
         const newY = rangeMax(l, r); // 可以放置的最小 y
@@ -221,6 +289,13 @@ const compressVerticalSkyline = (layout: Ref<IGridItem[]>, verticalCompact: bool
         const newBottom = newY + item.h;
         for (let c = l; c < r; c++) skyline[c] = newBottom;
     }
+    return skyline
+}
+
+/** 计算容器最大值 */
+const countGridMaxHeight = (skyline: number[], rowHeight: number, marginY: number) => {
+    const m = Math.max(...skyline)
+    return m * rowHeight + (m - 1) * marginY
 }
 
 /**
@@ -240,6 +315,25 @@ const pixelToGridX = (px: number, marginX: number, boxWidth: number) => Math.rou
  * @returns 
  */
 const pixelToGridY = (py: number, marginY: number, rowHeight: number) => Math.round((py - marginY) / (rowHeight + marginY))
+
+
+/**
+ * 反推坐标宽度
+ * @param px 实际坐标
+ * @param marginX marginLeft
+ * @param boxWidth 单个坐标宽度
+ * @returns 
+ */
+const pixelToGridW = (px: number, boxWidth: number) => Math.floor(px / boxWidth)
+
+/**
+ * 反推坐标高度
+ * @param px 实际坐标
+ * @param marginX marginLeft
+ * @param boxWidth 单个坐标宽度
+ * @returns 
+ */
+const pixelToGridH = (py: number, rowHeight: number) => Math.floor(py / rowHeight)
 
 const getStyle = (v: IGridItem, marginX: number, marginY: number, boxWidth: number, boxHeight: number) => {
     const style: Record<string, string> = {

@@ -2,22 +2,25 @@
     <div class="test">
         <GridLayout v-model='layout'>
             <template #default="scope">
-                <GridLayout v-if="scope.row.isNested" class="grid-nested" v-model='layout' is-nested :pid="scope.row.id" :level="2">
+                <GridLayout v-if="scope.row.isNested" class="grid-nested" v-model='layout' is-nested :pid="scope.row.id">
                     <template #default="scope">
-                        <GridLayout v-if="scope.row.isNested" class="grid-nested" v-model='layout' is-nested :pid="scope.row.id" :level="3">
+                        <GridLayout v-if="scope.row.isNested" class="grid-nested" v-model='layout' is-nested :pid="scope.row.id">
                             <template #default="scope">
                                 <div class="item">
-                                    {{ scope.row.id }}
+                                    <div>{{ scope.row.id }}</div>
+                                    <div>{{ scope.row.x }}--{{ scope.row.y }}--{{ scope.row.w }}--{{ scope.row.h }}</div>
                                 </div>
                             </template>
                         </GridLayout>
                         <div class="item" v-else>
-                            {{ scope.row.id }}
+                            <div>{{ scope.row.id }}</div>
+                            <div>{{ scope.row.x }}--{{ scope.row.y }}--{{ scope.row.w }}--{{ scope.row.h }}</div>
                         </div>
                     </template>
                 </GridLayout>
                 <div class="item" v-else>
-                    {{ scope.row.id }}
+                    <div>{{ scope.row.id }}</div>
+                    <div>{{ scope.row.x }}--{{ scope.row.y }}--{{ scope.row.w }}--{{ scope.row.h }}</div>
                 </div>
             </template>
         </GridLayout>
@@ -47,20 +50,10 @@ const layout = ref<IGridItem[]>([
 </script>
 
 <style>
-.test {
-    padding: 10px;
-    width: 800px;
-    height: 600px;
-    outline: 1px solid #00f;
-}
 .item{
     width: 100%;
     height: 100%;
     outline: 1px dashed #f00;
-    box-sizing: border-box;
-}
-.grid-nested{
-    outline: 1px dashed #0f0;
     box-sizing: border-box;
 }
 </style>
