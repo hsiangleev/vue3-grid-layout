@@ -4,7 +4,7 @@
         <div
             v-for='v,i in currentData'
             :key='v.id'
-            :class='["grid-stack-item"]'
+            class='grid-stack-item'
             :style='itemStyle(v)'
             :grid-id='v.id'
             @mousedown.stop='(e) => mouseDown(e, v)'
@@ -48,18 +48,11 @@ if(!isRoot) {
 const { currentData, itemStyle, isShowPlaceholder, mouseDown, placeholderStyle, resizeDown, layoutStyle } = useGridstack(props, rootData, modelValue, gridRef, isRoot)
 </script>
 
-<style>
+<style scoped>
 .grid-stack {
     height: 100%;
     width: 100%;
     position: relative;
-    outline: 1px dashed #0f0;
-}
-.grid-nested {
-    height: 100% !important;
-    overflow-y: scroll;
-    scrollbar-width: none;     /* Firefox */
-    -ms-overflow-style: none;  /* IE 10+ */
 }
 .grid-stack-item {
     position: absolute;
@@ -78,6 +71,10 @@ const { currentData, itemStyle, isShowPlaceholder, mouseDown, placeholderStyle, 
     cursor: se-resize;
     width: 12px;
     height: 12px;
-    background: url("data:image/svg+xml;charset=utf-8,%3Csvg viewBox='0 0 1024 1024' xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M765.558 510.004a93.65 93.65 0 10191.665 0 93.65 93.65 0 10-191.665 0zm0 311.456a93.65 93.65 0 10191.665 0 93.65 93.65 0 10-191.665 0zm-343.401 0a93.65 93.65 0 10191.665 0 93.65 93.65 0 10-191.665 0zm0-311.456a93.65 93.65 0 10191.665 0 93.65 93.65 0 10-191.665 0zM765.558 202.54a93.65 93.65 0 10191.665 0 93.65 93.65 0 10-191.665 0zM66.777 821.46a93.65 93.65 0 10191.665 0 93.65 93.65 0 10-191.665 0z' fill='%23BFBFBF'/%3E%3C/svg%3E") no-repeat 50%;
+    background: url("data:image/svg+xml;base64,PHN2ZyBzdHlsZT0iYmFja2dyb3VuZC1jb2xvcjojZmZmZmZmMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjYiIGhlaWdodD0iNiI+PHBhdGggZD0iTTYgNkgwVjQuMmg0LjJWMEg2djZ6IiBvcGFjaXR5PSIuMzAyIi8+PC9zdmc+");
+    background-position: 100% 100%;
+    padding: 0 3px 3px 0;
+    background-repeat: no-repeat;
+    background-origin: content-box;
 }
 </style>

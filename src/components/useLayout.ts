@@ -1,5 +1,4 @@
-import { computed, onMounted, ref, type Ref, type InjectionKey, nextTick } from 'vue'
-import { useResizeObserver } from '@vueuse/core'
+import { computed, onMounted, ref, type Ref, type InjectionKey, nextTick, onBeforeUnmount } from 'vue'
 
 export class IData {
     rootEl?: HTMLDivElement
@@ -41,7 +40,13 @@ export interface IProps {
     isNested?: boolean
 }
 
-export function useGridstack(props: IProps, rootData: IData, modelValue: Ref<IGridItem[]>, gridRef: Ref<HTMLDivElement | null>, isRoot: boolean) {
+export function useGridstack(
+    props: IProps, 
+    rootData: IData, 
+    modelValue: Ref<IGridItem[]>, 
+    gridRef: Ref<HTMLDivElement | null>, 
+    isRoot: boolean
+) {
     const marginX = computed(() => rootData.margin![0])
     const marginY = computed(() => rootData.margin![1])
     const rootRect = ref(new IDomRect())
@@ -50,18 +55,23 @@ export function useGridstack(props: IProps, rootData: IData, modelValue: Ref<IGr
     const currentData = computed(() => modelValue.value.filter(v => !v.pid || v.pid === props.pid))
 
     const skyline = ref<number[]>([])
+    let stop1: () => void, stop2:() => void
 
     onMounted(async() => {
         await nextTick()
         skyline.value = compressVerticalSkyline(currentData, rootData.verticalCompact!, rootData.cols!)
         // 以根节点为参考坐标系
-        useResizeObserver(rootData.rootEl, ([r]) => {
+        stop1 = domResizeObserver(rootData.rootEl!, ([r]) => {
             rootRect.value = r!.contentRect
             boxWidth.value = (rootRect.value.width - marginX.value * (rootData.cols! - 1)) / rootData.cols!
-        })
-        useResizeObserver(gridRef.value, ([r]) => {
+        }).stop
+        stop2 = domResizeObserver(gridRef.value!, ([r]) => {
             layoutRect.value = r!.contentRect
-        })
+        }).stop
+    })
+    onBeforeUnmount(() => {
+        stop1?.()
+        stop2?.()
     })
     
     const { mouseDown, mouseUp, movingItem, moveLeft, moveTop } = useDragFn(rootData, currentData, layoutRect, boxWidth, skyline)
@@ -212,6 +222,8 @@ const useResizeFn = (
     modelValue: Ref<IGridItem[]>, 
     skyline: Ref<number[]>
 ) => {
+    const marginX = computed(() => rootData.margin![0])
+    const marginY = computed(() => rootData.margin![1])
     const resizeItem = ref<IGridItem>()
     const resizeWidth = ref(0)
     const resizeHeight = ref(0)
@@ -231,10 +243,17 @@ const useResizeFn = (
         const item = resizeItem.value!
         if(resizeWidth.value < boxWidth.value) resizeWidth.value = boxWidth.value
         if(resizeHeight.value < rootData.rowHeight!) resizeHeight.value = rootData.rowHeight!
-        let w = pixelToGridW(resizeWidth.value, boxWidth.value)
-        const h = pixelToGridH(resizeHeight.value, rootData.rowHeight!)
+        let w = pixelToGridX(resizeWidth.value, marginX.value, boxWidth.value)
+        const h = pixelToGridY(resizeHeight.value, marginY.value, rootData.rowHeight!)
 
-        // 计算当前坐标系的最大值
+        // 是嵌套的时候，计算当前子节点的最大宽度（缩放不能覆盖最右侧的子节点）
+        if(item.isNested) {
+            const l = modelValue.value.filter(v => v.pid === item.id).map(v => v.x + v.w)
+            const m = Math.max(...l)
+            if(w < m) w = m
+        }
+
+        // 计算当前坐标系的最大值（缩放不能覆盖最右侧父节点）
         const maxW = modelValue.value.find(v => v.id === item.pid)?.w ?? rootData.cols!
         if(w + item.x > maxW) w = maxW - item.x
         item.w = w
@@ -242,7 +261,6 @@ const useResizeFn = (
         skyline.value = compressVerticalSkyline(currentData, rootData.verticalCompact!, rootData.cols!)
     }
     const resizeUp = () => {
-        
         document.removeEventListener('mousemove', resizeMove)
         document.removeEventListener('mouseup', resizeUp)
         resizeItem.value = undefined
@@ -316,25 +334,6 @@ const pixelToGridX = (px: number, marginX: number, boxWidth: number) => Math.rou
  */
 const pixelToGridY = (py: number, marginY: number, rowHeight: number) => Math.round((py - marginY) / (rowHeight + marginY))
 
-
-/**
- * 反推坐标宽度
- * @param px 实际坐标
- * @param marginX marginLeft
- * @param boxWidth 单个坐标宽度
- * @returns 
- */
-const pixelToGridW = (px: number, boxWidth: number) => Math.floor(px / boxWidth)
-
-/**
- * 反推坐标高度
- * @param px 实际坐标
- * @param marginX marginLeft
- * @param boxWidth 单个坐标宽度
- * @returns 
- */
-const pixelToGridH = (py: number, rowHeight: number) => Math.floor(py / rowHeight)
-
 const getStyle = (v: IGridItem, marginX: number, marginY: number, boxWidth: number, boxHeight: number) => {
     const style: Record<string, string> = {
         width: `${boxWidth * v.w + (v.w - 1) * marginX}px`,
@@ -353,5 +352,17 @@ const getOffsetRelativeTo = (el: HTMLDivElement, relativeEl: HTMLDivElement) => 
     return {
         x: rect1.left - rect2.left,
         y: rect1.top - rect2.top
+    }
+}
+
+/** 监听元素改变 */
+const domResizeObserver = (el: HTMLElement, callback: (entries: ResizeObserverEntry[]) => void) => {
+    // 创建监听器
+    const resizeObserver = new ResizeObserver((entries) => callback(entries))
+    // 开始监听
+    resizeObserver.observe(el)
+
+    return {
+        stop: () => resizeObserver.unobserve(el)
     }
 }
