@@ -1,11 +1,26 @@
 {
-  "name": "vue3-grid-layout",
-  "private": true,
-  "version": "0.0.0",
+  "name": "vue3-grid-nested",
+  "private": false,
+  "version": "0.0.1",
   "type": "module",
+  "typings": "./dist/vue3-grid-nested.es.d.ts",
+  "files": ["dist"],
+  "main": "./dist/vue3-grid-nested.umd.js",
+  "module": "./dist/vue3-grid-nested.es.js",
+  "exports": {
+    ".": {
+      "import": "./dist/vue3-grid-nested.es.js",
+      "require": "./dist/vue3-grid-nested.umd.js"
+    }
+  },
+  "author": {
+    "name": "hsianglee",
+    "url": "https://github.com/hsiangleev/vue3-grid-nested"
+  },
+  "description": "vue3栅栏嵌套布局",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc -b && vite build",
+    "build": "vue-tsc -b && vite build --emptyOutDir",
     "preview": "vite preview",
     "lint": "eslint . --fix",
     "styleLint": "stylelint **/*.{css,vue} --fix"

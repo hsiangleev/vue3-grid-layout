@@ -1,5 +1,55 @@
-# Vue 3 + TypeScript + Vite
+## vue3栅栏嵌套布局
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+支持缩放和自动对齐，支持嵌套
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+### 使用
+
+```vue
+<template>
+    <div class='test'>
+        <GridNested v-model='layout'>
+            <template #default='scope'>
+                <div v-if='scope.row.isNested' class='item'>
+                    <div>nexted--{{ scope.row.id }}</div>
+                    <div>{{ scope.row.x }}--{{ scope.row.y }}--{{ scope.row.w }}--{{ scope.row.h }}</div>
+                </div>
+                <div v-else class='item'>
+                    <div>{{ scope.row.id }}</div>
+                    <div>{{ scope.row.x }}--{{ scope.row.y }}--{{ scope.row.w }}--{{ scope.row.h }}</div>
+                </div>
+            </template>
+        </GridNested>
+    </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import GridNested from '@/components/GridNested/GridNested.vue'
+import type { IGridItem } from '@/components/GridNested/useLayout'
+
+const layout = ref<IGridItem[]>([
+    { pid: '#', id: 'a', x: 0, y: 0, w: 3, h: 3 },
+    { pid: '#', id: 'b', x: 3, y: 0, w: 3, h: 3 },
+    { pid: '#', id: 'c', x: 6, y: 0, w: 6, h: 3 },
+    { pid: '#', id: 'd', x: 4, y: 3, w: 6, h: 12, isNested: true },
+
+    { pid: 'd', id: 'd-a', x: 0, y: 0, w: 4, h: 8, isNested: true },
+    { pid: 'd-a', id: 'd-a-a', x: 0, y: 0, w: 2, h: 2 },
+    { pid: 'd-a', id: 'd-a-b', x: 0, y: 2, w: 2, h: 2 },
+
+    { pid: 'd', id: 'd-b', x: 0, y: 0, w: 2, h: 2 },
+
+    { pid: '#', id: 'e', x: 0, y: 2, w: 2, h: 3 },
+    { pid: '#', id: 'f', x: 6, y: 6, w: 4, h: 3 }
+])
+</script>
+
+<style>
+.item{
+    width: 100%;
+    height: 100%;
+    border: 1px dashed #f00;
+    box-sizing: border-box;
+}
+</style>
+```

@@ -1,20 +1,30 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import dts from 'vite-plugin-dts'
+import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
+    resolve: {
+        alias: {
+            '@': path.resolve(__dirname, './src')
+        }
+    },
     plugins: [
         vue(),
         dts({
-            insertTypesEntry: true
+            rollupTypes: true,
+            tsconfigPath: './tsconfig.app.json'
         })
     ],
     build: {
+        sourcemap: true,
+        outDir: 'dist',
+        minify: true,
         lib: {
             entry: 'src/index.ts',
-            name: 'Vue3-Grid-Layout',
-            fileName: (format) => `Vue3-Grid-Layout.${format}.js`
+            name: 'vue3-grid-nested',
+            fileName: (format) => `vue3-grid-nested.${format}.js`
         },
         rollupOptions: {
             external: ['vue'],
@@ -23,8 +33,6 @@ export default defineConfig({
                     vue: 'Vue'
                 }
             }
-        },
-        sourcemap: true,
-        minify: true
+        }
     }
 })

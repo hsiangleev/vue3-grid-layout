@@ -17,8 +17,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import GridNested from './components/GridNested.vue'
-import type { IGridItem } from './components/useLayout'
+import GridNested from '@/components/GridNested/GridNested.vue'
+import type { IGridItem } from '@/components/GridNested/useLayout'
 
 const layout = ref<IGridItem[]>([
     { pid: '#', id: 'a', x: 0, y: 0, w: 3, h: 3 },

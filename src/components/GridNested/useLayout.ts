@@ -269,21 +269,6 @@ const useResizeFn = (
     }
 }
 
-export const hasCollision = (items: IGridItem[]) => {
-    for (let i = 0; i < items.length; i++) {
-        for (let j = i + 1; j < items.length; j++) {
-            const a = items[i]!, b = items[j]!
-            const overlapX = !(a.x + a.w <= b.x || b.x + b.w <= a.x)
-            const overlapY = !(a.y + a.h <= b.y || b.y + b.h <= a.y)
-            if (overlapX && overlapY) {
-                console.warn(`Collision: ${a.id ?? i} <-> ${b.id ?? j}`)
-                return true
-            }
-        }
-    }
-    return false
-}
-
 /** 向上压缩空间 */
 const compressVerticalSkyline = (currentData: Ref<IGridItem[]>, cols: number) => {
     // 初始化 skyline 为 0（每列当前高度）
