@@ -4,14 +4,17 @@
   "version": "0.0.1",
   "type": "module",
   "typings": "./dist/vue3-grid-nested.es.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "main": "./dist/vue3-grid-nested.umd.js",
   "module": "./dist/vue3-grid-nested.es.js",
   "exports": {
     ".": {
       "import": "./dist/vue3-grid-nested.es.js",
       "require": "./dist/vue3-grid-nested.umd.js"
-    }
+    },
+    "./dist/vue3-grid-nested.css": "./dist/vue3-grid-nested.css"
   },
   "author": {
     "name": "hsianglee",

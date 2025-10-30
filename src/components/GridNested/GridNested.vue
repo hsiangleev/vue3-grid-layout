@@ -35,10 +35,9 @@ const modelValue = defineModel<IGridItem[]>({ required: true })
 
 <style scoped>
 .grid-nested {
-    height: 100% !important;
+    height: 100%;
     overflow-y: scroll;
-    scrollbar-width: none;     /* Firefox */
-    -ms-overflow-style: none;  /* IE 10+ */
-    outline: 1px dashed #0f0;
+    scrollbar-width: none;
+    outline: 1px dashed #ddd;
 }
 </style>
