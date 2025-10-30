@@ -1,16 +1,16 @@
 <template>
-    <div ref='gridRef' class='grid-stack' :grid-pid='props.pid' :style='layoutStyle'>
-        <div v-if='isShowPlaceholder' class='grid-stack-item shadow-placeholder' :style='placeholderStyle' />
+    <div ref='gridRef' class='grid-nested' :grid-pid='props.pid' :style='layoutStyle'>
+        <div v-if='isShowPlaceholder' class='grid-nested-item shadow-placeholder' :style='placeholderStyle' />
         <div
             v-for='v,i in currentData'
             :key='v.id'
-            class='grid-stack-item'
+            class='grid-nested-item'
             :style='itemStyle(v)'
             :grid-id='v.id'
             @mousedown.stop='(e) => mouseDown(e, v)'
         >
             <slot :row='currentData[i]!' />
-            <div class='grid-stack-item-resize' @mousedown.stop='(e) => resizeDown(e, v)' />
+            <div class='grid-nested-item-resize' @mousedown.stop='(e) => resizeDown(e, v)' />
         </div>
     </div>
 </template>
@@ -18,7 +18,13 @@
 <script setup lang="ts">
 import { useTemplateRef, reactive, inject, provide, onMounted } from 'vue'
 import { IData, InjectionKeySymbol, useGridstack, type IGridItem, type IProps } from './useLayout'
-const props = defineProps<IProps>()
+const props = withDefaults(defineProps<IProps>(), {
+    pid: '#',
+    margin: () => [10, 10],
+    rowHeight: 30,
+    cols: 12,
+    isNested: false
+})
 const gridRef = useTemplateRef('gridRef')
 const modelValue = defineModel<IGridItem[]>({ required: true })
 
@@ -36,25 +42,24 @@ if(!isRoot) {
     })
 }
 
-const { currentData, itemStyle, isShowPlaceholder, mouseDown, placeholderStyle, resizeDown, layoutStyle } = useGridstack(props, rootData, modelValue, gridRef, isRoot)
+const { currentData, itemStyle, isShowPlaceholder, mouseDown, placeholderStyle, resizeDown, layoutStyle } = useGridstack(props, rootData, modelValue, gridRef)
 </script>
 
-<style scoped>
-.grid-stack {
-    height: 100%;
+<style>
+.grid-nested {
     width: 100%;
     position: relative;
 }
-.grid-stack-item {
+.grid-nested-item {
     position: absolute;
     top: 0;
     left: 0;
     user-select: none;
 }
-.grid-stack-item.shadow-placeholder {
+.grid-nested-item.shadow-placeholder {
     background: rgba(255, 0, 0, .2);
 }
-.grid-stack-item-resize{
+.grid-nested-item-resize{
     display: inline-block;
     position: absolute;
     right: 0;
@@ -67,5 +72,12 @@ const { currentData, itemStyle, isShowPlaceholder, mouseDown, placeholderStyle, 
     padding: 0 3px 3px 0;
     background-repeat: no-repeat;
     background-origin: content-box;
+    z-index: 2;
+}
+.grid-nested-repeat {
+    height: 100%;
+    overflow-y: scroll;
+    scrollbar-width: none;
+    outline: 1px dashed #ddd;
 }
 </style>

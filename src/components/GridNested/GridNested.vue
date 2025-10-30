@@ -1,19 +1,21 @@
 <template>
     <GridLayout v-model='modelValue' v-bind='props'>
         <template #default='scope'>
-            <GridNested
-                v-if='scope.row.isNested' 
-                v-model='modelValue'
-                class='grid-nested'
-                is-nested
-                :pid='scope.row.id'
-                :margin='margin'
-                :row-height='rowHeight'
-                :cols='cols'
-            >
-                <template #default='scope2'><slot :row='scope2.row' /></template>
-            </GridNested>
-            <slot v-else :row='scope.row' />
+            <div class='grid-nested-repeat'>
+                <slot :row='scope.row' />
+                <template v-if='scope.row.isNested'>
+                    <GridNested
+                        v-model='modelValue'
+                        is-nested
+                        :pid='scope.row.id'
+                        :margin='margin'
+                        :row-height='rowHeight'
+                        :cols='cols'
+                    >
+                        <template #default='scope2'><slot :row='scope2.row' /></template>
+                    </GridNested>
+                </template>
+            </div>
         </template>
     </GridLayout>
 </template>
@@ -32,12 +34,3 @@ const props = withDefaults(defineProps<IProps>(), {
 })
 const modelValue = defineModel<IGridItem[]>({ required: true })
 </script>
-
-<style scoped>
-.grid-nested {
-    height: 100%;
-    overflow-y: scroll;
-    scrollbar-width: none;
-    outline: 1px dashed #ddd;
-}
-</style>

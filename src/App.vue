@@ -1,23 +1,34 @@
 <template>
     <div class='test'>
-        <GridNested v-model='layout'>
+        <GridLayout v-model='layout'>
             <template #default='scope'>
-                <div v-if='scope.row.isNested' class='item'>
+                <div class='grid-nested-repeat'>
+                    <GridLayout v-model='layout' :is-nested='true' :pid='scope.row.id'>
+                        <template #default='scope2'>
+                            <div class='item'>{{ scope2.row.id }}</div>
+                        </template>
+                    </GridLayout>
+                </div>
+            </template>
+        </GridLayout>
+        <!-- <GridNested v-model='layout'>
+            <template #default='scope'>
+                <div v-if='scope.row.isNested'>
                     <div>nexted--{{ scope.row.id }}</div>
-                    <div>{{ scope.row.x }}--{{ scope.row.y }}--{{ scope.row.w }}--{{ scope.row.h }}</div>
                 </div>
                 <div v-else class='item'>
                     <div>{{ scope.row.id }}</div>
                     <div>{{ scope.row.x }}--{{ scope.row.y }}--{{ scope.row.w }}--{{ scope.row.h }}</div>
                 </div>
             </template>
-        </GridNested>
+        </GridNested> -->
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import GridNested from '@/components/GridNested/GridNested.vue'
+import GridLayout from '@/components/GridNested/GridLayout.vue'
+// import GridNested from '@/components/GridNested/GridNested.vue'
 import type { IGridItem } from '@/components/GridNested/useLayout'
 
 const layout = ref<IGridItem[]>([
@@ -37,7 +48,7 @@ const layout = ref<IGridItem[]>([
 ])
 </script>
 
-<style>
+<style scoped>
 .item{
     width: 100%;
     height: 100%;

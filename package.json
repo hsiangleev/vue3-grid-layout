@@ -14,7 +14,7 @@
       "import": "./dist/vue3-grid-nested.es.js",
       "require": "./dist/vue3-grid-nested.umd.js"
     },
-    "./dist/vue3-grid-nested.css": "./dist/vue3-grid-nested.css"
+    "./style.css": "./dist/vue3-grid-nested.css"
   },
   "author": {
     "name": "hsianglee",

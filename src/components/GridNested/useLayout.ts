@@ -17,6 +17,7 @@ export interface IGridItem {
     h: number
     isNested?: boolean
     pid?: string
+    [index: string]: any
 }
 
 class IDomRect {
@@ -36,21 +37,22 @@ export interface IProps {
     rowHeight?: number
     cols?: number
     isNested?: boolean
+    /** 嵌套子节点的额外过滤参数（为分组使用，如Tab页设计） */
+    nestedCondition?: (v: IGridItem) => boolean
 }
 
 export function useGridstack(
     props: IProps, 
     rootData: IData, 
     modelValue: Ref<IGridItem[]>, 
-    gridRef: Ref<HTMLDivElement | null>, 
-    isRoot: boolean
+    gridRef: Ref<HTMLDivElement | null> 
 ) {
     const marginX = computed(() => rootData.margin![0])
     const marginY = computed(() => rootData.margin![1])
     const rootRect = ref(new IDomRect())
     const layoutRect = ref(new IDomRect())
     const boxWidth = ref(0)
-    const currentData = computed(() => modelValue.value.filter(v => !v.pid || v.pid === props.pid))
+    const currentData = computed(() => modelValue.value.filter(v => !v.pid || v.pid === props.pid && (props.nestedCondition ? props.nestedCondition(v) : true)))
 
     const skyline = ref<number[]>([])
     let stop1: () => void, stop2:() => void
@@ -83,11 +85,13 @@ export function useGridstack(
         if(movingItem.value && movingItem.value.id === v.id) {
             style.left = `${moveLeft.value}px`
             style.top = `${moveTop.value}px`
+            style.zIndex = 1
         }
         // 如果当前正在缩放，则修改宽高
         if(resizeItem.value && resizeItem.value.id === v.id) {
             style.width = `${resizeWidth.value}px`
             style.height = `${resizeHeight.value}px`
+            style.zIndex = 1
         }
         return style
     })
@@ -105,9 +109,9 @@ export function useGridstack(
     const layoutHeight = computed(() => countGridMaxHeight(skyline.value, rootData.rowHeight!, marginY.value))
     /** layout样式 */
     const layoutStyle = computed(() => {
-        const style: Record<string, string> = {}
-        if(!isRoot) return style
-        style.height = `${layoutHeight.value}px`
+        const style: Record<string, string> = {
+            height: `${layoutHeight.value}px`
+        }
         return style
     })
 
@@ -174,7 +178,7 @@ const useDragFn = (
 
             // 在新的坐标系执行拖拽
             nextTick(() => {
-                const nEl = document.querySelector(`.grid-stack[grid-pid='${pid}'] .grid-stack-item[grid-id='${item.id}']`)
+                const nEl = document.querySelector(`.grid-nested[grid-pid='${pid}'] .grid-nested-item[grid-id='${item.id}']`)
                 nEl && nEl.dispatchEvent(new MouseEvent('mousedown', {
                     bubbles: true, // 让事件可以冒泡
                     cancelable: true, // 是否可取消
@@ -317,7 +321,7 @@ const pixelToGridX = (px: number, marginX: number, boxWidth: number) => Math.rou
 const pixelToGridY = (py: number, marginY: number, rowHeight: number) => Math.round((py - marginY) / (rowHeight + marginY))
 
 const getStyle = (v: IGridItem, marginX: number, marginY: number, boxWidth: number, boxHeight: number) => {
-    const style: Record<string, string> = {
+    const style: Record<string, any> = {
         width: `${boxWidth * v.w + (v.w - 1) * marginX}px`,
         height: `${boxHeight * v.h + (v.h - 1) * marginY}px`,
         left: `${boxWidth * v.x + (v.x + 1) * marginX - marginX}px`,
