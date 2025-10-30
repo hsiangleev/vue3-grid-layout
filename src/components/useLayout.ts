@@ -5,7 +5,6 @@ export class IData {
     margin?: [number, number] = [10, 10]
     rowHeight?: number = 30
     cols?: number = 12
-    verticalCompact?: boolean = true
 }
 
 export const InjectionKeySymbol = Symbol() as InjectionKey<IData>
@@ -36,7 +35,6 @@ export interface IProps {
     margin?: [number, number]
     rowHeight?: number
     cols?: number
-    verticalCompact?: boolean
     isNested?: boolean
 }
 
@@ -59,7 +57,7 @@ export function useGridstack(
 
     onMounted(async() => {
         await nextTick()
-        skyline.value = compressVerticalSkyline(currentData, rootData.verticalCompact!, rootData.cols!)
+        skyline.value = compressVerticalSkyline(currentData, rootData.cols!)
         // 以根节点为参考坐标系
         stop1 = domResizeObserver(rootData.rootEl!, ([r]) => {
             rootRect.value = r!.contentRect
@@ -198,7 +196,7 @@ const useDragFn = (
         }
         item.x = pixelToGridX(x, marginX.value, boxWidth.value)
         item.y = pixelToGridY(y, marginY.value, rootData.rowHeight!)
-        skyline.value = compressVerticalSkyline(currentData, rootData.verticalCompact!, rootData.cols!)
+        skyline.value = compressVerticalSkyline(currentData, rootData.cols!)
     }
 
     const mouseUp = () => {
@@ -258,7 +256,7 @@ const useResizeFn = (
         if(w + item.x > maxW) w = maxW - item.x
         item.w = w
         item.h = h
-        skyline.value = compressVerticalSkyline(currentData, rootData.verticalCompact!, rootData.cols!)
+        skyline.value = compressVerticalSkyline(currentData, rootData.cols!)
     }
     const resizeUp = () => {
         document.removeEventListener('mousemove', resizeMove)
@@ -287,10 +285,9 @@ export const hasCollision = (items: IGridItem[]) => {
 }
 
 /** 向上压缩空间 */
-const compressVerticalSkyline = (currentData: Ref<IGridItem[]>, verticalCompact: boolean, cols: number) => {
+const compressVerticalSkyline = (currentData: Ref<IGridItem[]>, cols: number) => {
     // 初始化 skyline 为 0（每列当前高度）
     const skyline: number[] = new Array(cols).fill(0)
-    if(!verticalCompact) return skyline
     // 按 y 升序处理（可确保稳定放置）
     currentData.value.sort((a,b) => (a.y - b.y) || (a.x - b.x))
     // 辅助：取区间 max

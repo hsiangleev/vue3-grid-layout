@@ -26,11 +26,11 @@ const layout = ref<IGridItem[]>([
     { pid: '#', id: 'c', x: 6, y: 0, w: 6, h: 3 },
     { pid: '#', id: 'd', x: 4, y: 3, w: 6, h: 12, isNested: true },
 
-    // { pid: 'd', id: 'd-a', x: 0, y: 0, w: 4, h: 8, isNested: true },
-    // { pid: 'd-a', id: 'd-a-a', x: 0, y: 0, w: 2, h: 2 },
-    // { pid: 'd-a', id: 'd-a-b', x: 0, y: 2, w: 2, h: 2 },
+    { pid: 'd', id: 'd-a', x: 0, y: 0, w: 4, h: 8, isNested: true },
+    { pid: 'd-a', id: 'd-a-a', x: 0, y: 0, w: 2, h: 2 },
+    { pid: 'd-a', id: 'd-a-b', x: 0, y: 2, w: 2, h: 2 },
 
-    // { pid: 'd', id: 'd-b', x: 0, y: 0, w: 2, h: 2 },
+    { pid: 'd', id: 'd-b', x: 0, y: 0, w: 2, h: 2 },
 
     { pid: '#', id: 'e', x: 0, y: 2, w: 2, h: 3 },
     { pid: '#', id: 'f', x: 6, y: 6, w: 4, h: 3 }

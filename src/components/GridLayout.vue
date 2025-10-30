@@ -18,15 +18,7 @@
 <script setup lang="ts">
 import { useTemplateRef, reactive, inject, provide, onMounted } from 'vue'
 import { IData, InjectionKeySymbol, useGridstack, type IGridItem, type IProps } from './useLayout'
-const props = withDefaults(defineProps<IProps>(), {
-    pid: '#',
-    margin: () => [10, 10],
-    rowHeight: 30,
-    cols: 12,
-    verticalCompact: true,
-    isNested: false
-})
-
+const props = defineProps<IProps>()
 const gridRef = useTemplateRef('gridRef')
 const modelValue = defineModel<IGridItem[]>({ required: true })
 
@@ -41,7 +33,6 @@ if(!isRoot) {
         rootData.cols = props.cols
         rootData.margin = props.margin
         rootData.rowHeight = props.rowHeight
-        rootData.verticalCompact = props.verticalCompact
     })
 }
 
