@@ -1,7 +1,7 @@
 {
   "name": "vue3-grid-nested",
   "private": false,
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "typings": "./dist/vue3-grid-nested.es.d.ts",
   "files": [
@@ -37,6 +37,7 @@
     "@types/node": "^24.6.0",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/tsconfig": "^0.8.1",
+    "element-plus": "^2.11.5",
     "eslint": "9.32.0",
     "eslint-plugin-vue": "^10.5.1",
     "globals": "^16.4.0",

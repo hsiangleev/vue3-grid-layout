@@ -1,9 +1,9 @@
 <template>
     <div class='test'>
-        <GridLayout v-model='layout'>
+        <GridLayout v-model='layout' @nested-change='(from) => console.log(from)'>
             <template #default='scope'>
                 <div class='grid-nested-repeat'>
-                    <GridLayout v-model='layout' :is-nested='true' :pid='scope.row.id'>
+                    <GridLayout v-model='layout' :is-nested='true' :pid='scope.row.id' @nested-change='(from) => console.log(from)'>
                         <template #default='scope2'>
                             <div class='item'>{{ scope2.row.id }}</div>
                         </template>

@@ -45,7 +45,8 @@ export function useGridstack(
     props: IProps, 
     rootData: IData, 
     modelValue: Ref<IGridItem[]>, 
-    gridRef: Ref<HTMLDivElement | null> 
+    gridRef: Ref<HTMLDivElement | null>,
+    emits: (evt: 'nestedChange', from: IGridItem, to: IGridItem) => void
 ) {
     const marginX = computed(() => rootData.margin![0])
     const marginY = computed(() => rootData.margin![1])
@@ -74,7 +75,7 @@ export function useGridstack(
         stop2?.()
     })
     
-    const { mouseDown, mouseUp, movingItem, moveLeft, moveTop } = useDragFn(rootData, currentData, layoutRect, boxWidth, skyline)
+    const { mouseDown, mouseUp, movingItem, moveLeft, moveTop } = useDragFn(rootData, currentData, layoutRect, boxWidth, modelValue, skyline, emits)
     const { resizeDown, resizeItem, resizeWidth, resizeHeight } = useResizeFn(rootData, currentData, boxWidth, modelValue, skyline)
 
     /** 每块样式 */
@@ -125,7 +126,9 @@ const useDragFn = (
     currentData: Ref<IGridItem[]>, 
     layoutRect: Ref<IDomRect>, 
     boxWidth: Ref<number>, 
-    skyline: Ref<number[]>
+    modelValue: Ref<IGridItem[]>, 
+    skyline: Ref<number[]>,
+    emits: (evt: 'nestedChange', from: IGridItem, to: IGridItem) => void
 ) => {
     const marginX = computed(() => rootData.margin![0])
     const marginY = computed(() => rootData.margin![1])
@@ -167,7 +170,9 @@ const useDragFn = (
             x = relativeTo.x + mouseOffsetX
             y = relativeTo.y + mouseOffsetY
 
+            const toItem = modelValue.value.find(v => v.id === pid)!
             item.pid = pid
+            emits('nestedChange', item, toItem)
             // 结束当前坐标系的拖拽
             document.dispatchEvent(new MouseEvent('mouseup', {
                 bubbles: true, // 让事件可以冒泡

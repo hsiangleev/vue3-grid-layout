@@ -16,7 +16,7 @@
 </template>
 
 <script setup lang="ts">
-import { useTemplateRef, reactive, inject, provide, onMounted } from 'vue'
+import { useTemplateRef, reactive, inject, provide, onMounted, defineEmits } from 'vue'
 import { IData, InjectionKeySymbol, useGridstack, type IGridItem, type IProps } from './useLayout'
 const props = withDefaults(defineProps<IProps>(), {
     pid: '#',
@@ -27,6 +27,10 @@ const props = withDefaults(defineProps<IProps>(), {
 })
 const gridRef = useTemplateRef('gridRef')
 const modelValue = defineModel<IGridItem[]>({ required: true })
+const emits = defineEmits<{
+    /** 不在同一坐标系时触发 */
+    nestedChange: [from: IGridItem, to: IGridItem]
+}>()
 
 let rootData = reactive(new IData())
 const isRoot = props.pid === '#'
@@ -42,7 +46,9 @@ if(!isRoot) {
     })
 }
 
-const { currentData, itemStyle, isShowPlaceholder, mouseDown, placeholderStyle, resizeDown, layoutStyle } = useGridstack(props, rootData, modelValue, gridRef)
+const { 
+    currentData, itemStyle, isShowPlaceholder, mouseDown, placeholderStyle, resizeDown, layoutStyle 
+} = useGridstack(props, rootData, modelValue, gridRef, emits)
 </script>
 
 <style>
