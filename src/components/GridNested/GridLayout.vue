@@ -16,7 +16,7 @@
 </template>
 
 <script setup lang="ts">
-import { useTemplateRef, reactive, inject, provide, onMounted, defineEmits } from 'vue'
+import { useTemplateRef, reactive, inject, provide, onMounted } from 'vue'
 import { IData, InjectionKeySymbol, useGridstack, type IGridItem, type IProps } from './useLayout'
 const props = withDefaults(defineProps<IProps>(), {
     pid: '#',
@@ -54,6 +54,7 @@ const {
 <style>
 .grid-nested {
     width: 100%;
+    min-height: 100%;
     position: relative;
 }
 .grid-nested-item {

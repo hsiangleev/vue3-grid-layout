@@ -1,7 +1,7 @@
 {
   "name": "vue3-grid-nested",
   "private": false,
-  "version": "0.0.2",
+  "version": "0.0.1",
   "type": "module",
   "typings": "./dist/vue3-grid-nested.es.d.ts",
   "files": [

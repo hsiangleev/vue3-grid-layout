@@ -9,6 +9,11 @@ export class IData {
 
 export const InjectionKeySymbol = Symbol() as InjectionKey<IData>
 
+export interface IGridGroup {
+    id: string
+    title: string
+    [index: string]: any
+}
 export interface IGridItem {
     id: string
     x: number
@@ -17,6 +22,9 @@ export interface IGridItem {
     h: number
     isNested?: boolean
     pid?: string
+    groupPId?: string
+    groupActiveId?: string
+    groupList?: IGridGroup[]
     [index: string]: any
 }
 
