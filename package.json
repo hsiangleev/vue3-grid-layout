@@ -25,7 +25,7 @@
     "name": "hsianglee",
     "url": "https://github.com/hsiangleev"
   },
-  "homepage": "https://github.com/hsiangleev/vue3-grid-nested#readme",
+  "homepage": "https://vue3-grid-nested.hsianglee.cn",
   "description": "vue3栅栏嵌套布局",
   "scripts": {
     "dev": "vite",
