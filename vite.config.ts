@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => {
         },
         plugins: [
             vue(),
-            dts({
+            isLib && dts({
                 rollupTypes: true,
                 tsconfigPath: './tsconfig.app.json'
             })
