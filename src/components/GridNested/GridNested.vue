@@ -11,6 +11,7 @@
                         :margin='margin'
                         :row-height='rowHeight'
                         :cols='cols'
+                        :is-readonly='isReadonly'
                     >
                         <template #default='scope2'><slot :row='scope2.row' /></template>
                     </GridNested>
@@ -30,7 +31,8 @@ const props = withDefaults(defineProps<IProps>(), {
     margin: () => [10, 10],
     rowHeight: 30,
     cols: 12,
-    isNested: false
+    isNested: false,
+    isReadonly: false
 })
 const modelValue = defineModel<IGridItem[]>({ required: true })
 </script>

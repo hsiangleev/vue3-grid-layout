@@ -10,20 +10,21 @@
             @mousedown.stop='(e) => mouseDown(e, v)'
         >
             <slot :row='currentData[i]!' />
-            <div class='grid-nested-item-resize' @mousedown.stop='(e) => resizeDown(e, v)' />
+            <div v-if='!rootData.isReadonly' class='grid-nested-item-resize' @mousedown.stop='(e) => resizeDown(e, v)' />
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { useTemplateRef, reactive, inject, provide, onMounted } from 'vue'
+import { useTemplateRef, reactive, inject, provide, watchEffect } from 'vue'
 import { IData, InjectionKeySymbol, useGridstack, type IGridItem, type IProps } from './useLayout'
 const props = withDefaults(defineProps<IProps>(), {
     pid: '#',
     margin: () => [10, 10],
     rowHeight: 30,
     cols: 12,
-    isNested: false
+    isNested: false,
+    isReadonly: false
 })
 const gridRef = useTemplateRef('gridRef')
 const modelValue = defineModel<IGridItem[]>({ required: true })
@@ -38,11 +39,12 @@ if(!isRoot) {
     rootData = reactive(inject(InjectionKeySymbol, new IData()))
 }else{
     provide(InjectionKeySymbol, rootData)
-    onMounted(() => {
+    watchEffect(() => {
         rootData.rootEl = gridRef.value!
         rootData.cols = props.cols
         rootData.margin = props.margin
         rootData.rowHeight = props.rowHeight
+        rootData.isReadonly = props.isReadonly
     })
 }
 

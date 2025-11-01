@@ -5,6 +5,7 @@ export class IData {
     margin?: [number, number] = [10, 10]
     rowHeight?: number = 30
     cols?: number = 12
+    isReadonly?: boolean
 }
 
 export const InjectionKeySymbol = Symbol() as InjectionKey<IData>
@@ -47,6 +48,7 @@ export interface IProps {
     isNested?: boolean
     /** 嵌套子节点的额外过滤参数（为分组使用，如Tab页设计） */
     nestedCondition?: (v: IGridItem) => boolean
+    isReadonly?: boolean
 }
 
 export function useGridstack(
@@ -148,6 +150,7 @@ const useDragFn = (
     const moveTop = ref(0)
     const targetEl = ref<HTMLDivElement>()
     const mouseDown = (event: MouseEvent, v: IGridItem) => {
+        if(rootData.isReadonly) return
         targetEl.value = event.currentTarget as HTMLDivElement
         mouseDownX = event.clientX - targetEl.value.offsetLeft
         mouseDownY = event.clientY - targetEl.value.offsetTop
@@ -243,6 +246,7 @@ const useResizeFn = (
     const resizeWidth = ref(0)
     const resizeHeight = ref(0)
     const resizeDown = (event: MouseEvent, v: IGridItem) => {
+        if(rootData.isReadonly) return
         const currentEl = ((event.currentTarget as HTMLDivElement).parentNode as HTMLDivElement).getClientRects()[0]!
         const { width, height } = currentEl
         resizeWidth.value = width
