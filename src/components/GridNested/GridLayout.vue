@@ -10,7 +10,7 @@
             @mousedown.stop='(e) => mouseDown(e, v)'
         >
             <slot :row='currentData[i]!' />
-            <div v-if='!rootData.isReadonly' class='grid-nested-item-resize' @mousedown.stop='(e) => resizeDown(e, v)' />
+            <div v-if='!rootData.isReadonly && !v.isReadonly' class='grid-nested-item-resize' @mousedown.stop='(e) => resizeDown(e, v)' />
         </div>
     </div>
 </template>

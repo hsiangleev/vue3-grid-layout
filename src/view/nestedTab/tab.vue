@@ -12,7 +12,7 @@
                     v-model='modelValue'
                     is-nested
                     :pid='current.id'
-                    :nested-condition='val => val.groupPId === v.id'
+                    :group-condition='val => val.groupPId === v.id'
                     @nested-change='(from, to) => emits("nestedChange", from, to)'
                 >
                     <template #default='scope2'>

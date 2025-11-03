@@ -26,6 +26,7 @@ export interface IGridItem {
     groupPId?: string
     groupActiveId?: string
     groupList?: IGridGroup[]
+    isReadonly?: boolean
     [index: string]: any
 }
 
@@ -47,7 +48,7 @@ export interface IProps {
     cols?: number
     isNested?: boolean
     /** 嵌套子节点的额外过滤参数（为分组使用，如Tab页设计） */
-    nestedCondition?: (v: IGridItem) => boolean
+    groupCondition?: (v: IGridItem) => boolean
     isReadonly?: boolean
 }
 
@@ -63,7 +64,15 @@ export function useGridstack(
     const rootRect = ref(new IDomRect())
     const layoutRect = ref(new IDomRect())
     const boxWidth = ref(0)
-    const currentData = computed(() => modelValue.value.filter(v => !v.pid || v.pid === props.pid && (props.nestedCondition ? props.nestedCondition(v) : true)))
+    const currentData = computed(() => modelValue.value.filter(v => (
+        // 没有pid，则代表没有嵌套
+        v.pid === undefined 
+        || v.pid === props.pid && (
+            props.groupCondition 
+                ? props.groupCondition(v) 
+                : true
+        )
+    )))
 
     const skyline = ref<number[]>([])
     let stop1: () => void, stop2:() => void
@@ -150,7 +159,7 @@ const useDragFn = (
     const moveTop = ref(0)
     const targetEl = ref<HTMLDivElement>()
     const mouseDown = (event: MouseEvent, v: IGridItem) => {
-        if(rootData.isReadonly) return
+        if(rootData.isReadonly || v.isReadonly) return
         targetEl.value = event.currentTarget as HTMLDivElement
         mouseDownX = event.clientX - targetEl.value.offsetLeft
         mouseDownY = event.clientY - targetEl.value.offsetTop
@@ -175,7 +184,7 @@ const useDragFn = (
         const pid = el?.getAttribute('grid-pid')
         const item = movingItem.value!
         // 不在一个坐标系（嵌套拖拽）
-        if(pid && item.pid !== pid) {
+        if(pid && item.pid !== undefined && item.pid !== pid) {
             // 计算当前元素相对坐标系的坐标
             const relativeTo = getOffsetRelativeTo(targetEl.value!, el)
             x = relativeTo.x + mouseOffsetX
@@ -246,7 +255,7 @@ const useResizeFn = (
     const resizeWidth = ref(0)
     const resizeHeight = ref(0)
     const resizeDown = (event: MouseEvent, v: IGridItem) => {
-        if(rootData.isReadonly) return
+        if(rootData.isReadonly || v.isReadonly) return
         const currentEl = ((event.currentTarget as HTMLDivElement).parentNode as HTMLDivElement).getClientRects()[0]!
         const { width, height } = currentEl
         resizeWidth.value = width
