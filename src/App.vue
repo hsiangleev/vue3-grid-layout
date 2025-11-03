@@ -2,17 +2,17 @@
     <div class='content'>
         <el-tabs v-model='activeName' class='nested-tabs-flex'>
             <el-tab-pane label='单层' name='layout'>
-                <el-scrollbar v-if='activeName === "layout"' class='h-full'>
+                <el-scrollbar class='h-full'>
                     <LayoutTest />
                 </el-scrollbar>
             </el-tab-pane>
             <el-tab-pane label='无限嵌套' name='nested'>
-                <el-scrollbar v-if='activeName === "nested"' class='h-full'>
+                <el-scrollbar class='h-full'>
                     <NestedTest />
                 </el-scrollbar>
             </el-tab-pane>
             <el-tab-pane label='分组嵌套' name='nestedTab'>
-                <el-scrollbar v-if='activeName === "nestedTab"' class='h-full'>
+                <el-scrollbar class='h-full'>
                     <NestedTabTest />
                 </el-scrollbar>
             </el-tab-pane>

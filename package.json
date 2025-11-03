@@ -1,7 +1,7 @@
 {
   "name": "vue3-grid-nested",
   "private": false,
-  "version": "0.0.4",
+  "version": "0.0.5",
   "type": "module",
   "license": "MIT",
   "typings": "./dist/vue3-grid-nested.es.d.ts",
@@ -21,10 +21,7 @@
     "type": "git",
     "url": "https://github.com/hsiangleev/vue3-grid-nested"
   },
-  "author": {
-    "name": "hsianglee",
-    "url": "https://github.com/hsiangleev"
-  },
+  "author": "hsianglee",
   "homepage": "https://vue3-grid-nested.hsianglee.cn",
   "description": "vue3栅栏嵌套布局",
   "scripts": {

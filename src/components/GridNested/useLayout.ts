@@ -203,7 +203,7 @@ const useDragFn = (
 
             // 在新的坐标系执行拖拽
             nextTick(() => {
-                const nEl = document.querySelector(`.grid-nested[grid-pid='${pid}'] .grid-nested-item[grid-id='${item.id}']`)
+                const nEl = rootData.rootEl!.querySelector(`.grid-nested[grid-pid='${pid}'] .grid-nested-item[grid-id='${item.id}']`)
                 nEl && nEl.dispatchEvent(new MouseEvent('mousedown', {
                     bubbles: true, // 让事件可以冒泡
                     cancelable: true, // 是否可取消
@@ -299,18 +299,14 @@ const useResizeFn = (
     }
 }
 
-/** 向上压缩空间 */
+/** 天际线算法 */
 const compressVerticalSkyline = (currentData: Ref<IGridItem[]>, cols: number) => {
     // 初始化 skyline 为 0（每列当前高度）
     const skyline: number[] = new Array(cols).fill(0)
     // 按 y 升序处理（可确保稳定放置）
     currentData.value.sort((a,b) => (a.y - b.y) || (a.x - b.x))
     // 辅助：取区间 max
-    const rangeMax = (l: number, r: number) => {
-        let m = 0
-        for (let c = l; c < r; c++) if (skyline[c]! > m) m = skyline[c]!
-        return m
-    }
+    const rangeMax = (l: number, r: number) => Math.max(...skyline.slice(l,r))
     for (const item of currentData.value) {
         const l = item.x
         const r = Math.min(cols, item.x + item.w)
