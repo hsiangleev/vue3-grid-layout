@@ -95,7 +95,7 @@ export function useGridstack(
     })
     
     const { mouseDown, mouseUp, movingItem, moveLeft, moveTop } = useDragFn(rootData, currentData, layoutRect, boxWidth, modelValue, skyline, emits)
-    const { resizeDown, resizeItem, resizeWidth, resizeHeight } = useResizeFn(rootData, currentData, boxWidth, modelValue, skyline)
+    const { resizeDown, resizeItem, resizeWidth, resizeHeight, resizeLeft, resizeTop } = useResizeFn(rootData, currentData, boxWidth, modelValue, skyline)
 
     /** 每块样式 */
     const itemStyle = computed(() => (v: IGridItem) => {
@@ -111,6 +111,8 @@ export function useGridstack(
         if(resizeItem.value && resizeItem.value.id === v.id) {
             style.width = `${resizeWidth.value}px`
             style.height = `${resizeHeight.value}px`
+            style.left = `${resizeLeft.value}px`
+            style.top = `${resizeTop.value}px`
             style.zIndex = 1
         }
         return style
@@ -254,12 +256,21 @@ const useResizeFn = (
     const resizeItem = ref<IGridItem>()
     const resizeWidth = ref(0)
     const resizeHeight = ref(0)
+    const resizeLeft = ref(0)
+    const resizeTop = ref(0)
     const resizeDown = (event: MouseEvent, v: IGridItem) => {
         if(rootData.isReadonly || v.isReadonly) return
-        const currentEl = ((event.currentTarget as HTMLDivElement).parentNode as HTMLDivElement).getClientRects()[0]!
+        const targetEl = (event.currentTarget as HTMLDivElement).parentNode as HTMLDivElement
+        const currentEl = targetEl.getClientRects()[0]!
         const { width, height } = currentEl
         resizeWidth.value = width
         resizeHeight.value = height
+
+        // 记录拖拽之前的位置，拖拽不影响正在拖拽的位置，只影响阴影位置
+        const { left, top } = getComputedStyle(targetEl)
+        resizeLeft.value = parseFloat(left)
+        resizeTop.value = parseFloat(top)
+
         resizeItem.value = v
         document.addEventListener('mousemove', resizeMove)
         document.addEventListener('mouseup', resizeUp)
@@ -295,7 +306,7 @@ const useResizeFn = (
     }
 
     return {
-        resizeDown, resizeItem, resizeWidth, resizeHeight
+        resizeDown, resizeItem, resizeWidth, resizeHeight, resizeLeft, resizeTop
     }
 }
 

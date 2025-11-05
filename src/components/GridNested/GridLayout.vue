@@ -67,6 +67,9 @@ const {
 }
 .grid-nested-item.shadow-placeholder {
     background: rgba(255, 0, 0, .2);
+    transition-duration: 0.25s;
+    transition-timing-function: ease;
+    transition-property: width, height, top, left;
 }
 .grid-nested-item-resize{
     display: inline-block;
