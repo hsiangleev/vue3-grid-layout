@@ -1,5 +1,5 @@
 <template>
-    <GridLayout v-model='layout'>
+    <GridLayout v-model='layout' :margin='[3, 3]'>
         <template #default='scope'>
             <div class='item'>{{ scope.row.id }}</div>
         </template>

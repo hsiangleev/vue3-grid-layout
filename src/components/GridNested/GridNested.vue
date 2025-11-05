@@ -8,7 +8,6 @@
                         v-model='modelValue'
                         is-nested
                         :pid='scope.row.id'
-                        :margin='margin'
                         :row-height='rowHeight'
                         :cols='cols'
                         :is-readonly='isReadonly'
@@ -28,7 +27,7 @@ defineSlots<{
 }>()
 const props = withDefaults(defineProps<IProps>(), {
     pid: '#',
-    margin: () => [10, 10],
+    margin: () => [5, 5],
     rowHeight: 30,
     cols: 12,
     isNested: false,

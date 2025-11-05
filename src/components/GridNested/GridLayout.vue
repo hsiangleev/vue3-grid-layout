@@ -1,26 +1,30 @@
 <template>
     <div ref='gridRef' class='grid-nested' :grid-pid='props.pid' :style='layoutStyle'>
-        <div v-if='isShowPlaceholder' class='grid-nested-item shadow-placeholder' :style='placeholderStyle' />
+        <div v-if='isShowPlaceholder' class='grid-nested-drag' :style='placeholderStyle'>
+            <div class='grid-nested-item shadow-placeholder' />
+        </div>
         <div
             v-for='v,i in currentData'
             :key='v.id'
-            class='grid-nested-item'
+            class='grid-nested-drag'
             :style='itemStyle(v)'
             :grid-id='v.id'
             @mousedown.stop='(e) => mouseDown(e, v)'
         >
-            <slot :row='currentData[i]!' />
-            <div v-if='!rootData.isReadonly && !v.isReadonly' class='grid-nested-item-resize' @mousedown.stop='(e) => resizeDown(e, v)' />
+            <div class='grid-nested-item'>
+                <slot :row='currentData[i]!' />
+            </div>
+            <div v-if='!rootData.isReadonly && !v.isReadonly' class='grid-nested-drag-resize' @mousedown.stop='(e) => resizeDown(e, v)' />
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { useTemplateRef, reactive, inject, provide, watchEffect } from 'vue'
+import { useTemplateRef, reactive, inject, provide, watchEffect, computed } from 'vue'
 import { IData, InjectionKeySymbol, useGridstack, type IGridItem, type IProps } from './useLayout'
 const props = withDefaults(defineProps<IProps>(), {
     pid: '#',
-    margin: () => [10, 10],
+    margin: () => [5, 5],
     rowHeight: 30,
     cols: 12,
     isNested: false,
@@ -42,7 +46,6 @@ if(!isRoot) {
     watchEffect(() => {
         rootData.rootEl = gridRef.value!
         rootData.cols = props.cols
-        rootData.margin = props.margin
         rootData.rowHeight = props.rowHeight
         rootData.isReadonly = props.isReadonly
     })
@@ -51,6 +54,10 @@ if(!isRoot) {
 const { 
     currentData, itemStyle, isShowPlaceholder, mouseDown, placeholderStyle, resizeDown, layoutStyle 
 } = useGridstack(props, rootData, modelValue, gridRef, emits)
+
+const paddingY = computed(() => `${props.margin[0]}px`)
+const paddingX = computed(() => `${props.margin[1]}px`)
+const paddingDrag = computed(() => `${paddingY.value} ${paddingX.value}`)
 </script>
 
 <style>
@@ -59,23 +66,31 @@ const {
     min-height: 100%;
     position: relative;
 }
-.grid-nested-item {
+.grid-nested-drag {
     position: absolute;
     top: 0;
     left: 0;
     user-select: none;
+    padding: v-bind(paddingDrag);
+    box-sizing: border-box;
 }
-.grid-nested-item.shadow-placeholder {
-    background: rgba(255, 0, 0, .2);
+.grid-nested-item {
+    width: 100%;
+    height: 100%;
+}
+.grid-nested-drag:has(.grid-nested-item.shadow-placeholder) {
     transition-duration: 0.25s;
     transition-timing-function: ease;
     transition-property: width, height, top, left;
 }
-.grid-nested-item-resize{
+.grid-nested-item.shadow-placeholder {
+    background: rgba(255, 0, 0, .2);
+}
+.grid-nested-drag-resize{
     display: inline-block;
     position: absolute;
-    right: 0;
-    bottom: 0;
+    right: v-bind(paddingX);
+    bottom: v-bind(paddingY);
     cursor: se-resize;
     width: 12px;
     height: 12px;

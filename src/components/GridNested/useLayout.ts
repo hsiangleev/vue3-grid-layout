@@ -2,7 +2,7 @@ import { computed, onMounted, ref, type Ref, type InjectionKey, nextTick, onBefo
 
 export class IData {
     rootEl?: HTMLDivElement
-    margin?: [number, number] = [10, 10]
+    margin?: [number, number] = [5, 5]
     rowHeight?: number = 30
     cols?: number = 12
     isReadonly?: boolean
@@ -59,8 +59,6 @@ export function useGridstack(
     gridRef: Ref<HTMLDivElement | null>,
     emits: (evt: 'nestedChange', from: IGridItem, to: IGridItem) => void
 ) {
-    const marginX = computed(() => rootData.margin![0])
-    const marginY = computed(() => rootData.margin![1])
     const rootRect = ref(new IDomRect())
     const layoutRect = ref(new IDomRect())
     const boxWidth = ref(0)
@@ -83,7 +81,7 @@ export function useGridstack(
         // 以根节点为参考坐标系
         stop1 = domResizeObserver(rootData.rootEl!, ([r]) => {
             rootRect.value = r!.contentRect
-            boxWidth.value = (rootRect.value.width - marginX.value * (rootData.cols! - 1)) / rootData.cols!
+            boxWidth.value = rootRect.value.width / rootData.cols!
         }).stop
         stop2 = domResizeObserver(gridRef.value!, ([r]) => {
             layoutRect.value = r!.contentRect
@@ -100,7 +98,7 @@ export function useGridstack(
     /** 每块样式 */
     const itemStyle = computed(() => (v: IGridItem) => {
         const boxHeight = rootData.rowHeight!
-        const style = getStyle(v, marginX.value, marginY.value, boxWidth.value, boxHeight)
+        const style = getStyle(v, boxWidth.value, boxHeight)
         // 如果当前正在拖拽，则修改为移动的坐标
         if(movingItem.value && movingItem.value.id === v.id) {
             style.left = `${moveLeft.value}px`
@@ -124,11 +122,11 @@ export function useGridstack(
         const boxHeight = rootData.rowHeight!
         const v = movingItem.value || resizeItem.value
         if(!v) return {}
-        const style = getStyle(v, marginX.value, marginY.value, boxWidth.value, boxHeight)
+        const style = getStyle(v, boxWidth.value, boxHeight)
         return style
     })
     
-    const layoutHeight = computed(() => countGridMaxHeight(skyline.value, rootData.rowHeight!, marginY.value))
+    const layoutHeight = computed(() => countGridMaxHeight(skyline.value, rootData.rowHeight!))
     /** layout样式 */
     const layoutStyle = computed(() => {
         const style: Record<string, string> = {
@@ -151,8 +149,6 @@ const useDragFn = (
     skyline: Ref<number[]>,
     emits: (evt: 'nestedChange', from: IGridItem, to: IGridItem) => void
 ) => {
-    const marginX = computed(() => rootData.margin![0])
-    const marginY = computed(() => rootData.margin![1])
     let mouseDownX = 0
     let mouseDownY = 0
     let mouseOffsetX = 0
@@ -205,7 +201,7 @@ const useDragFn = (
 
             // 在新的坐标系执行拖拽
             nextTick(() => {
-                const nEl = rootData.rootEl!.querySelector(`.grid-nested[grid-pid='${pid}'] .grid-nested-item[grid-id='${item.id}']`)
+                const nEl = rootData.rootEl!.querySelector(`.grid-nested[grid-pid='${pid}'] .grid-nested-drag[grid-id='${item.id}']`)
                 nEl && nEl.dispatchEvent(new MouseEvent('mousedown', {
                     bubbles: true, // 让事件可以冒泡
                     cancelable: true, // 是否可取消
@@ -225,8 +221,8 @@ const useDragFn = (
             const w = layoutRect.value.width - targetEl.value!.offsetWidth
             if(x > w) x = w
         }
-        item.x = pixelToGridX(x, marginX.value, boxWidth.value)
-        item.y = pixelToGridY(y, marginY.value, rootData.rowHeight!)
+        item.x = pixelToGridX(x, boxWidth.value)
+        item.y = pixelToGridY(y, rootData.rowHeight!)
         skyline.value = compressVerticalSkyline(currentData, rootData.cols!)
     }
 
@@ -251,8 +247,6 @@ const useResizeFn = (
     modelValue: Ref<IGridItem[]>, 
     skyline: Ref<number[]>
 ) => {
-    const marginX = computed(() => rootData.margin![0])
-    const marginY = computed(() => rootData.margin![1])
     const resizeItem = ref<IGridItem>()
     const resizeWidth = ref(0)
     const resizeHeight = ref(0)
@@ -282,8 +276,8 @@ const useResizeFn = (
         const item = resizeItem.value!
         if(resizeWidth.value < boxWidth.value) resizeWidth.value = boxWidth.value
         if(resizeHeight.value < rootData.rowHeight!) resizeHeight.value = rootData.rowHeight!
-        let w = pixelToGridX(resizeWidth.value, marginX.value, boxWidth.value)
-        const h = pixelToGridY(resizeHeight.value, marginY.value, rootData.rowHeight!)
+        let w = pixelToGridX(resizeWidth.value, boxWidth.value)
+        const h = pixelToGridY(resizeHeight.value, rootData.rowHeight!)
 
         // 是嵌套的时候，计算当前子节点的最大宽度（缩放不能覆盖最右侧的子节点）
         if(item.isNested) {
@@ -330,9 +324,9 @@ const compressVerticalSkyline = (currentData: Ref<IGridItem[]>, cols: number) =>
 }
 
 /** 计算容器最大值 */
-const countGridMaxHeight = (skyline: number[], rowHeight: number, marginY: number) => {
+const countGridMaxHeight = (skyline: number[], rowHeight: number) => {
     const m = Math.max(...skyline)
-    return m * rowHeight + (m - 1) * marginY
+    return m * rowHeight
 }
 
 /**
@@ -342,7 +336,7 @@ const countGridMaxHeight = (skyline: number[], rowHeight: number, marginY: numbe
  * @param boxWidth 单个坐标宽度
  * @returns 
  */
-const pixelToGridX = (px: number, marginX: number, boxWidth: number) => Math.round((px - marginX) / (boxWidth + marginX))
+const pixelToGridX = (px: number, boxWidth: number) => Math.round(px / boxWidth)
 
 /**
  * 反推坐标轴Y
@@ -351,14 +345,14 @@ const pixelToGridX = (px: number, marginX: number, boxWidth: number) => Math.rou
  * @param rowHeight 单个坐标高度
  * @returns 
  */
-const pixelToGridY = (py: number, marginY: number, rowHeight: number) => Math.round((py - marginY) / (rowHeight + marginY))
+const pixelToGridY = (py: number, rowHeight: number) => Math.round(py / rowHeight)
 
-const getStyle = (v: IGridItem, marginX: number, marginY: number, boxWidth: number, boxHeight: number) => {
+const getStyle = (v: IGridItem, boxWidth: number, boxHeight: number) => {
     const style: Record<string, any> = {
-        width: `${boxWidth * v.w + (v.w - 1) * marginX}px`,
-        height: `${boxHeight * v.h + (v.h - 1) * marginY}px`,
-        left: `${boxWidth * v.x + (v.x + 1) * marginX - marginX}px`,
-        top: `${boxHeight * v.y + (v.y + 1) * marginY - marginY}px`
+        width: `${boxWidth * v.w}px`,
+        height: `${boxHeight * v.h}px`,
+        left: `${boxWidth * v.x}px`,
+        top: `${boxHeight * v.y}px`
     }
     return style
 }
