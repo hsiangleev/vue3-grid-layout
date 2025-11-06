@@ -8,7 +8,7 @@ export default {
     plugins: [
         '@stylistic/stylelint-plugin'
     ],
-    ignoreFiles: ['node_modules/**', 'dist/**', 'public/**'],
+    ignoreFiles: ['node_modules/**', 'dist/**', 'dist-app/**', 'public/**'],
     rules: {
         'at-rule-no-unknown': [ true, {
             ignoreAtRules: [
