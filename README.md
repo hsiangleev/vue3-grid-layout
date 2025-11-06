@@ -13,6 +13,66 @@
     app.use(gridNestedInstall)
     ```
 
+### 参数
+
+**组件属性**
+
+```ts
+interface IProps {
+    /** 双向绑定的数据 */
+    modelValue: IGridItem[]
+    /** 针对嵌套的布局，用来过滤当前布局的数据 */
+    pid?: string
+    /** 节点间的间距 */
+    margin?: [number, number]
+    /** 每行的高度 */
+    rowHeight?: number
+    /** 每行分成多少列 */
+    cols?: number
+    /** 当前layout是否可以嵌套 */
+    isNested?: boolean
+    /** 嵌套子节点的额外过滤参数（为分组使用，如Tab页设计） */
+    groupCondition?: (v: IGridItem) => boolean
+    /** 是否只读 */
+    isReadonly?: boolean
+    /** 是否使用padding代替margin，默认自动根据margin值计算高度和间距 */
+    isRealMargin?: boolean
+    /** 是否可拖拽 */
+    isDrag?: boolean
+    /** 是否可缩放 */
+    isResize?: boolean
+}
+```
+
+**节点数据格式**
+
+```ts
+interface IGridItem {
+    id: string
+    x: number
+    y: number
+    w: number
+    h: number
+    isNested?: boolean
+    pid?: string
+    groupPId?: string
+    groupActiveId?: string
+    groupList?: IGridGroup[]
+    isReadonly?: boolean
+    [index: string]: any
+}
+```
+
+**组件事件**
+
+| 事件名称 | 参数 | 说明 |
+| - | - | - |
+| dragStart | current: IGridItem, event: MouseEvent | 拖拽开始 |
+| dragEnd | current: IGridItem, event: MouseEvent | 拖拽结束 |
+|resizeStart | current: IGridItem, event: MouseEvent | 缩放开始 |
+| resizeEnd | current: IGridItem, event: MouseEvent | 缩放结束 |
+| nestedChange | from: IGridItem, to: IGridItem | 坐标系变化 |
+
 ### 示例
 
 #### 单层

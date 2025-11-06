@@ -14,7 +14,7 @@
             <div class='grid-nested-item'>
                 <slot :row='currentData[i]!' />
             </div>
-            <div v-if='!rootData.isReadonly && !v.isReadonly' class='grid-nested-drag-resize' @mousedown.stop='(e) => resizeDown(e, v)' />
+            <div v-if='!rootData.isReadonly && !v.isReadonly && rootData.isResize' class='grid-nested-drag-resize' @mousedown.stop='(e) => resizeDown(e, v)' />
         </div>
     </div>
 </template>
@@ -28,13 +28,19 @@ const props = withDefaults(defineProps<IProps>(), {
     rowHeight: 30,
     cols: 12,
     isNested: false,
-    isReadonly: false
+    isReadonly: false,
+    isDrag: true,
+    isResize: true
 })
 const gridRef = useTemplateRef('gridRef')
 const modelValue = defineModel<IGridItem[]>({ required: true })
 const emits = defineEmits<{
     /** 不在同一坐标系时触发 */
     nestedChange: [from: IGridItem, to: IGridItem]
+    dragStart: [current: IGridItem, event: MouseEvent]
+    dragEnd: [current: IGridItem, event: MouseEvent]
+    resizeStart: [current: IGridItem, event: MouseEvent]
+    resizeEnd: [current: IGridItem, event: MouseEvent]
 }>()
 
 let rootData = reactive(new IData())
@@ -46,8 +52,12 @@ if(!isRoot) {
     watchEffect(() => {
         rootData.rootEl = gridRef.value!
         rootData.cols = props.cols
+        rootData.margin = props.margin
         rootData.rowHeight = props.rowHeight
+        rootData.isRealMargin = props.isRealMargin
         rootData.isReadonly = props.isReadonly
+        rootData.isDrag = props.isDrag
+        rootData.isResize = props.isResize
     })
 }
 
@@ -55,8 +65,8 @@ const {
     currentData, itemStyle, isShowPlaceholder, mouseDown, placeholderStyle, resizeDown, layoutStyle 
 } = useGridstack(props, rootData, modelValue, gridRef, emits)
 
-const paddingY = computed(() => `${props.margin[0]}px`)
-const paddingX = computed(() => `${props.margin[1]}px`)
+const paddingY = computed(() => !rootData.isRealMargin ? '0px' : `${props.margin[0]}px`)
+const paddingX = computed(() => !rootData.isRealMargin ? '0px' : `${props.margin[1]}px`)
 const paddingDrag = computed(() => `${paddingY.value} ${paddingX.value}`)
 </script>
 

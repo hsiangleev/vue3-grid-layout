@@ -1,5 +1,10 @@
 <template>
-    <GridLayout v-model='layout' :margin='[3, 3]'>
+    <GridLayout
+        v-model='layout'
+        :margin='[3, 3]' 
+        @drag-start='(d) => console.log(d)'
+        @drag-end='(d) => console.log(d)'
+    >
         <template #default='scope'>
             <div class='item'>{{ scope.row.id }}</div>
         </template>

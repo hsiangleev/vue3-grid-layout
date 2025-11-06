@@ -10,7 +10,10 @@
                         :pid='scope.row.id'
                         :row-height='rowHeight'
                         :cols='cols'
+                        :margin='margin'
                         :is-readonly='isReadonly'
+                        :is-drag='isDrag'
+                        :is-resize='isResize'
                     >
                         <template #default='scope2'><slot :row='scope2.row' /></template>
                     </GridNested>
@@ -31,7 +34,9 @@ const props = withDefaults(defineProps<IProps>(), {
     rowHeight: 30,
     cols: 12,
     isNested: false,
-    isReadonly: false
+    isReadonly: false,
+    isDrag: true,
+    isResize: true
 })
 const modelValue = defineModel<IGridItem[]>({ required: true })
 </script>

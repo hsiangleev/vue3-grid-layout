@@ -6,6 +6,9 @@ export class IData {
     rowHeight?: number = 30
     cols?: number = 12
     isReadonly?: boolean
+    isRealMargin?: boolean
+    isDrag?: boolean
+    isResize?: boolean
 }
 
 export const InjectionKeySymbol = Symbol() as InjectionKey<IData>
@@ -42,23 +45,43 @@ class IDomRect {
 }
 
 export interface IProps {
+    /** 针对嵌套的布局，用来过滤当前布局的数据 */
     pid?: string
+    /** 节点间的间距 */
     margin?: [number, number]
+    /** 每行的高度 */
     rowHeight?: number
+    /** 每行分成多少列 */
     cols?: number
+    /** 当前layout是否可以嵌套 */
     isNested?: boolean
     /** 嵌套子节点的额外过滤参数（为分组使用，如Tab页设计） */
     groupCondition?: (v: IGridItem) => boolean
+    /** 是否只读 */
     isReadonly?: boolean
+    /** 是否使用padding代替margin，默认自动根据margin值计算高度和间距 */
+    isRealMargin?: boolean
+    /** 是否可拖拽 */
+    isDrag?: boolean
+    /** 是否可缩放 */
+    isResize?: boolean
 }
+
+type IEmits = ((evt: 'nestedChange', from: IGridItem, to: IGridItem) => void) 
+    & ((evt: 'dragStart', current: IGridItem, event: MouseEvent) => void) 
+    & ((evt: 'dragEnd', current: IGridItem, event: MouseEvent) => void) 
+    & ((evt: 'resizeStart', current: IGridItem, event: MouseEvent) => void) 
+    & ((evt: 'resizeEnd', current: IGridItem, event: MouseEvent) => void)
 
 export function useGridstack(
     props: IProps, 
     rootData: IData, 
     modelValue: Ref<IGridItem[]>, 
     gridRef: Ref<HTMLDivElement | null>,
-    emits: (evt: 'nestedChange', from: IGridItem, to: IGridItem) => void
+    emits: IEmits
 ) {
+    const marginX = computed(() => rootData.isRealMargin ? 0 : rootData.margin![0])
+    const marginY = computed(() => rootData.isRealMargin ? 0 : rootData.margin![1])
     const rootRect = ref(new IDomRect())
     const layoutRect = ref(new IDomRect())
     const boxWidth = ref(0)
@@ -81,7 +104,7 @@ export function useGridstack(
         // 以根节点为参考坐标系
         stop1 = domResizeObserver(rootData.rootEl!, ([r]) => {
             rootRect.value = r!.contentRect
-            boxWidth.value = rootRect.value.width / rootData.cols!
+            boxWidth.value = (rootRect.value.width - marginX.value * (rootData.cols! - 1)) / rootData.cols!
         }).stop
         stop2 = domResizeObserver(gridRef.value!, ([r]) => {
             layoutRect.value = r!.contentRect
@@ -92,13 +115,17 @@ export function useGridstack(
         stop2?.()
     })
     
-    const { mouseDown, mouseUp, movingItem, moveLeft, moveTop } = useDragFn(rootData, currentData, layoutRect, boxWidth, modelValue, skyline, emits)
-    const { resizeDown, resizeItem, resizeWidth, resizeHeight, resizeLeft, resizeTop } = useResizeFn(rootData, currentData, boxWidth, modelValue, skyline)
+    const { 
+        mouseDown, mouseUp, movingItem, moveLeft, moveTop 
+    } = useDragFn(rootData, currentData, layoutRect, boxWidth, modelValue, skyline, emits, marginX, marginY)
+    const { 
+        resizeDown, resizeItem, resizeWidth, resizeHeight, resizeLeft, resizeTop 
+    } = useResizeFn(rootData, currentData, boxWidth, modelValue, skyline, emits, marginX, marginY)
 
     /** 每块样式 */
     const itemStyle = computed(() => (v: IGridItem) => {
         const boxHeight = rootData.rowHeight!
-        const style = getStyle(v, boxWidth.value, boxHeight)
+        const style = getStyle(v, marginX.value, marginY.value, boxWidth.value, boxHeight)
         // 如果当前正在拖拽，则修改为移动的坐标
         if(movingItem.value && movingItem.value.id === v.id) {
             style.left = `${moveLeft.value}px`
@@ -122,11 +149,11 @@ export function useGridstack(
         const boxHeight = rootData.rowHeight!
         const v = movingItem.value || resizeItem.value
         if(!v) return {}
-        const style = getStyle(v, boxWidth.value, boxHeight)
+        const style = getStyle(v, marginX.value, marginY.value, boxWidth.value, boxHeight)
         return style
     })
     
-    const layoutHeight = computed(() => countGridMaxHeight(skyline.value, rootData.rowHeight!))
+    const layoutHeight = computed(() => countGridMaxHeight(skyline.value, rootData.rowHeight!, marginY.value))
     /** layout样式 */
     const layoutStyle = computed(() => {
         const style: Record<string, string> = {
@@ -147,7 +174,9 @@ const useDragFn = (
     boxWidth: Ref<number>, 
     modelValue: Ref<IGridItem[]>, 
     skyline: Ref<number[]>,
-    emits: (evt: 'nestedChange', from: IGridItem, to: IGridItem) => void
+    emits: IEmits,
+    marginX: Ref<number>,
+    marginY: Ref<number>
 ) => {
     let mouseDownX = 0
     let mouseDownY = 0
@@ -157,7 +186,7 @@ const useDragFn = (
     const moveTop = ref(0)
     const targetEl = ref<HTMLDivElement>()
     const mouseDown = (event: MouseEvent, v: IGridItem) => {
-        if(rootData.isReadonly || v.isReadonly) return
+        if(rootData.isReadonly || v.isReadonly || !rootData.isDrag) return
         targetEl.value = event.currentTarget as HTMLDivElement
         mouseDownX = event.clientX - targetEl.value.offsetLeft
         mouseDownY = event.clientY - targetEl.value.offsetTop
@@ -172,6 +201,7 @@ const useDragFn = (
 
         mouseOffsetX = event.offsetX
         mouseOffsetY = event.offsetY
+        emits('dragStart', movingItem.value!, event)
     }
     const mouseMove = (event: MouseEvent) => {
         const { clientX, clientY } = event
@@ -221,15 +251,16 @@ const useDragFn = (
             const w = layoutRect.value.width - targetEl.value!.offsetWidth
             if(x > w) x = w
         }
-        item.x = pixelToGridX(x, boxWidth.value)
-        item.y = pixelToGridY(y, rootData.rowHeight!)
+        item.x = pixelToGridX(x, marginX.value, boxWidth.value)
+        item.y = pixelToGridY(y, marginY.value, rootData.rowHeight!)
         skyline.value = compressVerticalSkyline(currentData, rootData.cols!)
     }
 
-    const mouseUp = () => {
+    const mouseUp = (event: MouseEvent) => {
         document.removeEventListener('mousemove', mouseMove)
         document.removeEventListener('mouseup', mouseUp)
         targetEl.value!.style.pointerEvents = ''
+        emits('dragEnd', movingItem.value!, event)
         movingItem.value = undefined
         targetEl.value = undefined
     }
@@ -245,7 +276,10 @@ const useResizeFn = (
     currentData: Ref<IGridItem[]>, 
     boxWidth: Ref<number>, 
     modelValue: Ref<IGridItem[]>, 
-    skyline: Ref<number[]>
+    skyline: Ref<number[]>,
+    emits: IEmits,
+    marginX: Ref<number>,
+    marginY: Ref<number>
 ) => {
     const resizeItem = ref<IGridItem>()
     const resizeWidth = ref(0)
@@ -253,7 +287,7 @@ const useResizeFn = (
     const resizeLeft = ref(0)
     const resizeTop = ref(0)
     const resizeDown = (event: MouseEvent, v: IGridItem) => {
-        if(rootData.isReadonly || v.isReadonly) return
+        if(rootData.isReadonly || v.isReadonly || !rootData.isResize) return
         const targetEl = (event.currentTarget as HTMLDivElement).parentNode as HTMLDivElement
         const currentEl = targetEl.getClientRects()[0]!
         const { width, height } = currentEl
@@ -268,6 +302,7 @@ const useResizeFn = (
         resizeItem.value = v
         document.addEventListener('mousemove', resizeMove)
         document.addEventListener('mouseup', resizeUp)
+        emits('resizeStart', resizeItem.value!, event)
     }
     const resizeMove = (event: MouseEvent) => {
         resizeWidth.value += event.movementX
@@ -276,8 +311,8 @@ const useResizeFn = (
         const item = resizeItem.value!
         if(resizeWidth.value < boxWidth.value) resizeWidth.value = boxWidth.value
         if(resizeHeight.value < rootData.rowHeight!) resizeHeight.value = rootData.rowHeight!
-        let w = pixelToGridX(resizeWidth.value, boxWidth.value)
-        const h = pixelToGridY(resizeHeight.value, rootData.rowHeight!)
+        let w = pixelToGridX(resizeWidth.value, marginX.value, boxWidth.value)
+        const h = pixelToGridY(resizeHeight.value, marginY.value, rootData.rowHeight!)
 
         // 是嵌套的时候，计算当前子节点的最大宽度（缩放不能覆盖最右侧的子节点）
         if(item.isNested) {
@@ -293,9 +328,10 @@ const useResizeFn = (
         item.h = h
         skyline.value = compressVerticalSkyline(currentData, rootData.cols!)
     }
-    const resizeUp = () => {
+    const resizeUp = (event: MouseEvent) => {
         document.removeEventListener('mousemove', resizeMove)
         document.removeEventListener('mouseup', resizeUp)
+        emits('resizeEnd', resizeItem.value!, event)
         resizeItem.value = undefined
     }
 
@@ -324,9 +360,9 @@ const compressVerticalSkyline = (currentData: Ref<IGridItem[]>, cols: number) =>
 }
 
 /** 计算容器最大值 */
-const countGridMaxHeight = (skyline: number[], rowHeight: number) => {
+const countGridMaxHeight = (skyline: number[], rowHeight: number, marginY: number) => {
     const m = Math.max(...skyline)
-    return m * rowHeight
+    return m * rowHeight + (m - 1) * marginY
 }
 
 /**
@@ -336,7 +372,7 @@ const countGridMaxHeight = (skyline: number[], rowHeight: number) => {
  * @param boxWidth 单个坐标宽度
  * @returns 
  */
-const pixelToGridX = (px: number, boxWidth: number) => Math.round(px / boxWidth)
+const pixelToGridX = (px: number, marginX: number, boxWidth: number) => Math.round((px - marginX) / (boxWidth + marginX))
 
 /**
  * 反推坐标轴Y
@@ -345,14 +381,14 @@ const pixelToGridX = (px: number, boxWidth: number) => Math.round(px / boxWidth)
  * @param rowHeight 单个坐标高度
  * @returns 
  */
-const pixelToGridY = (py: number, rowHeight: number) => Math.round(py / rowHeight)
+const pixelToGridY = (py: number, marginY: number, rowHeight: number) => Math.round((py - marginY) / (rowHeight + marginY))
 
-const getStyle = (v: IGridItem, boxWidth: number, boxHeight: number) => {
+const getStyle = (v: IGridItem, marginX: number, marginY: number, boxWidth: number, boxHeight: number) => {
     const style: Record<string, any> = {
-        width: `${boxWidth * v.w}px`,
-        height: `${boxHeight * v.h}px`,
-        left: `${boxWidth * v.x}px`,
-        top: `${boxHeight * v.y}px`
+        width: `${boxWidth * v.w + (v.w - 1) * marginX}px`,
+        height: `${boxHeight * v.h + (v.h - 1) * marginY}px`,
+        left: `${boxWidth * v.x + (v.x + 1) * marginX - marginX}px`,
+        top: `${boxHeight * v.y + (v.y + 1) * marginY - marginY}px`
     }
     return style
 }
