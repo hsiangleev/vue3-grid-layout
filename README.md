@@ -1,8 +1,8 @@
-## vue3栅栏嵌套布局
+## 简介
 
-支持缩放和自动对齐，支持嵌套和分组
+使用vue3加ts编写的栅栏嵌套布局，支持缩放和自动对齐，支持嵌套和分组
 
-### 使用方式
+## 使用方式
 
 1. 安装 `npm i vue3-grid-nested -D`
 1. 使用：
@@ -13,9 +13,7 @@
     app.use(gridNestedInstall)
     ```
 
-### 参数
-
-**组件属性**
+## 组件属性
 
 ```ts
 interface IProps {
@@ -44,7 +42,7 @@ interface IProps {
 }
 ```
 
-**节点数据格式**
+## 节点数据格式
 
 ```ts
 interface IGridItem {
@@ -63,7 +61,7 @@ interface IGridItem {
 }
 ```
 
-**组件事件**
+## 组件事件
 
 | 事件名称 | 参数 | 说明 |
 | - | - | - |
@@ -73,9 +71,7 @@ interface IGridItem {
 | resizeEnd | current: IGridItem, event: MouseEvent | 缩放结束 |
 | nestedChange | from: IGridItem, to: IGridItem | 坐标系变化 |
 
-### 示例
-
-#### 单层
+## 单层示例
 
 ```vue
 <template>
@@ -115,7 +111,7 @@ const layout = ref<IGridItem[]>([
 </style>
 ```
 
-#### 嵌套
+## 嵌套示例
 
 ```vue
 <template>
