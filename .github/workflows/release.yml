@@ -6,7 +6,7 @@ on:
       - 'v*'
 permissions:
   contents: write
-  
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -48,7 +48,6 @@ jobs:
             - 仓库: ${{ github.repository }}
             - 触发者: ${{ github.actor }}
             - 提交: ${{ github.sha }}
-            - 构建时间: $(date -u -d '+8 hour' +"%Y-%m-%d %H:%M:%S CST")
           files: |
             dist.zip
         env:
