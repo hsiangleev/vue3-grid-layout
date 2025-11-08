@@ -208,7 +208,7 @@ const useDragFn = (
         let x = clientX - mouseDownX
         let y = clientY - mouseDownY
 
-        const el = getElementByClassFromPoint(clientX, clientY, 'grid-nested') as HTMLDivElement
+        const el = document.elementFromPoint(clientX, clientY) as HTMLDivElement
         const pid = el?.getAttribute('grid-pid')
         const item = movingItem.value!
         // 不在一个坐标系（嵌套拖拽）
@@ -414,14 +414,4 @@ const domResizeObserver = (el: HTMLElement, callback: (entries: ResizeObserverEn
     return {
         stop: () => resizeObserver.unobserve(el)
     }
-}
-
-/** 获取当前鼠标位置的元素，且包含特定的class */
-const getElementByClassFromPoint = (x: number, y: number, className: string) => {
-    const elements = document.elementsFromPoint(x, y)
-    for (const el of elements) {
-        const target = el.closest(`.${className}`)
-        if (target) return target
-    }
-    return null
 }
