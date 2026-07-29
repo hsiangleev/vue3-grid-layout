@@ -1,7 +1,7 @@
 {
   "name": "vue3-grid-nested",
   "private": false,
-  "version": "0.0.13",
+  "version": "0.0.14",
   "type": "module",
   "license": "MIT",
   "typings": "./dist/vue3-grid-nested.es.d.ts",
@@ -30,7 +30,8 @@
     "build:lib": "vue-tsc -b && vite build --emptyOutDir --mode lib",
     "preview": "vite preview",
     "lint": "eslint . --fix",
-    "styleLint": "stylelint **/*.{css,vue} --fix"
+    "styleLint": "stylelint **/*.{css,vue} --fix",
+    "init": "npm install --registry=https://registry.npmmirror.com/"
   },
   "dependencies": {
     "vue": "^3.5.22"
